@@ -101,9 +101,9 @@ Cross-cutting quality requirements:
 - [x] config flow (no YAML-only setup)
 - [x] reauth flow
 - [x] unload support
-- [ ] diagnostics with redaction
+- [x] diagnostics with redaction
 - [x] runtime error handling and availability behavior
-- [ ] tests for critical paths
+- [x] tests for critical paths
 - [x] documentation for setup and known limitations
 - [ ] ownership/maintenance expectations documented
 
@@ -191,30 +191,30 @@ Achieve robust day-to-day behavior and measurable quality.
 
 Tasks:
 
-- [ ] Options Flow (e.g., polling interval within safe bounds)
-- [ ] coordinator backoff/retry strategy
-- [ ] explicit reauthentication flow
-- [ ] diagnostics endpoint with strict secret redaction
-- [ ] structured logging policy (debuggable, privacy-safe)
+- [x] Options Flow (e.g., polling interval within safe bounds)
+- [x] coordinator backoff/retry strategy
+- [x] explicit reauthentication flow
+- [x] diagnostics endpoint with strict secret redaction
+- [x] structured logging policy (debuggable, privacy-safe)
 - [ ] user-facing repairs/errors where appropriate
 
 Testing & CI:
 
-- [ ] unit tests for config flow
-- [ ] tests for coordinator success/failure cycles
-- [ ] entity mapping tests
-- [ ] regression tests for auth/token error handling
-- [ ] CI: lint + type checks + tests
+- [x] unit tests for config flow
+- [x] tests for coordinator success/failure cycles
+- [x] entity mapping tests
+- [x] regression tests for auth/token error handling
+- [x] CI: lint + type checks + tests
 
 Quality gates:
 
-- [ ] critical paths covered by automated tests
-- [ ] diagnostics confirmed to exclude tokens/passwords
-- [ ] common transient failures handled without manual recovery
+- [x] critical paths covered by automated tests
+- [x] diagnostics confirmed to exclude tokens/passwords
+- [x] common transient failures handled without manual recovery
 
 Status:
 
-**Planned**
+**Done**
 
 ---
 
