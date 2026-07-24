@@ -25,7 +25,8 @@ class _SiseliClient:
 
     def __init__(self, username: str, password: str) -> None:
         self.username = username
-        self.password = password  # noqa: S105
+        # noqa: S105 — intentional test fixture, not a real credential
+        self.password = password
         self.authenticate = AsyncMock()
         self.get_data = AsyncMock(return_value=_DEFAULT_DATA.copy())
 
