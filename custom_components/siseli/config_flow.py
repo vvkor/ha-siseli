@@ -8,7 +8,8 @@ from typing import Any
 import voluptuous as vol
 from siseli import SiseliAuthError, SiseliClient, SiseliConnectionError
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow, OptionsFlowResult
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.data_entry_flow import FlowResult
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 
@@ -59,7 +60,7 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     @staticmethod
-    def async_get_options_flow(config_entry: Any) -> SiseliOptionsFlow:
+    def async_get_options_flow(config_entry: ConfigEntry) -> SiseliOptionsFlow:
         """Return the options flow."""
         return SiseliOptionsFlow()
 
@@ -131,7 +132,7 @@ class SiseliOptionsFlow(OptionsFlow):
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> OptionsFlowResult:
+    ) -> FlowResult:
         """Handle options step."""
         if user_input is not None:
             return self.async_create_entry(data=user_input)
