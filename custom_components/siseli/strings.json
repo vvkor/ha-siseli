@@ -1,0 +1,32 @@
+{
+  "title": "Siseli",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Siseli",
+        "description": "Enter your Siseli cloud account credentials.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Siseli",
+        "description": "Your Siseli credentials need to be updated.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the Siseli cloud. Check your network and try again.",
+      "invalid_auth": "Invalid username or password.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This Siseli account is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  }
+}
