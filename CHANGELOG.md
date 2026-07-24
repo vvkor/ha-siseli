@@ -11,6 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Phase 2: sensor platform with 14 inverter telemetry entities
+  - Battery: state of charge, voltage, current, power
+  - PV: voltage, current, power
+  - Grid: voltage, frequency, power
+  - Output: voltage, frequency
+  - Load power
+  - Inverter state
+- Sensor entities use stable `unique_id`, `device_info`, and correct HA `device_class`/`state_class`/units
+- Entities become `unavailable` automatically on coordinator update failure
+- Platform forwarding wired in `async_setup_entry` and `async_unload_entry`
+
+---
+
+## [0.1.0]
+
+### Added
+
 - Phase 1 foundation: custom component scaffold under `custom_components/siseli/`
 - `manifest.json` with integration metadata (domain, version, codeowners, iot_class)
 - `Config Flow` with credential validation against the Siseli cloud

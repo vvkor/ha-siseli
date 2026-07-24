@@ -29,6 +29,7 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _LOGGER,
             name=DOMAIN,
             update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
+            config_entry=entry,
         )
         creds = entry.data
         self.client = SiseliClient(
