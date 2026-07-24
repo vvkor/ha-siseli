@@ -77,12 +77,12 @@ These requirements are mandatory for public HACS use:
 - [x] repository contains a valid custom component in `custom_components/siseli/`
 - [x] `manifest.json` is complete and valid (domain, name, version, dependencies, requirements)
 - [ ] semantic version tags are published (`vX.Y.Z`)
-- [x] basic visuals/assets as needed by HACS listing/documentation
 - [x] clear `README.md` with install/setup/troubleshooting instructions
 - [x] `hacs.json` present and valid (if used by current HACS expectations)
 - [x] `LICENSE` included
 - [x] `CHANGELOG.md` maintained
 - [x] compatibility policy documented (supported Home Assistant versions)
+- [x] basic visuals/assets as needed by HACS listing/documentation
 - [x] no secrets in logs/docs/examples
 
 Status:
