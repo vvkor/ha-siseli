@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-release:
+    name: Validate and publish release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install ruff
+          pip install -r requirements_test.txt
+
+      - name: Validate release metadata
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: python scripts/release_metadata.py validate "$TAG_NAME"
+
+      - name: Run ruff
+        run: ruff check custom_components/
+
+      - name: Run tests
+        run: python -m pytest tests/ --tb=short -q
+
+      - name: Extract release notes
+        id: notes
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          notes="$(python scripts/release_metadata.py notes "$TAG_NAME")"
+          {
+            echo "body<<EOF"
+            echo "$notes"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Siseli ${{ github.ref_name }}
+          body: ${{ steps.notes.outputs.body }}

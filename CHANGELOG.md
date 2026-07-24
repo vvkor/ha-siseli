@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.2.0]
+
 ### Added
 
 - Phase 2: sensor platform with 14 inverter telemetry entities
@@ -21,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sensor entities use stable `unique_id`, `device_info`, and correct HA `device_class`/`state_class`/units
 - Entities become `unavailable` automatically on coordinator update failure
 - Platform forwarding wired in `async_setup_entry` and `async_unload_entry`
+- Phase 3 reliability features: options flow, coordinator retry/backoff, diagnostics redaction, and CI validation
+- Phase 4 release readiness docs and repository templates for HACS and Home Assistant maintenance
 
 ---
 

@@ -82,7 +82,7 @@ These requirements are mandatory for public HACS use:
 - [x] `LICENSE` included
 - [x] `CHANGELOG.md` maintained
 - [x] compatibility policy documented (supported Home Assistant versions)
-- [ ] basic visuals/assets as needed by HACS listing/documentation
+- [x] basic visuals/assets as needed by HACS listing/documentation
 - [x] no secrets in logs/docs/examples
 
 Status:
@@ -105,7 +105,7 @@ Cross-cutting quality requirements:
 - [x] runtime error handling and availability behavior
 - [x] tests for critical paths
 - [x] documentation for setup and known limitations
-- [ ] ownership/maintenance expectations documented
+- [x] ownership/maintenance expectations documented
 
 ---
 
@@ -226,23 +226,23 @@ Prepare stable public releases and maintenance workflow.
 
 Tasks:
 
-- [ ] semantic release process (`vX.Y.Z`)
-- [ ] release notes/changelog discipline
-- [ ] documented support boundaries and compatibility matrix
-- [ ] issue templates (bug report/feature request)
-- [ ] contribution guidelines and development setup docs
-- [ ] post-release validation checklist
+- [x] semantic release process (`vX.Y.Z`)
+- [x] release notes/changelog discipline
+- [x] documented support boundaries and compatibility matrix
+- [x] issue templates (bug report/feature request)
+- [x] contribution guidelines and development setup docs
+- [x] post-release validation checklist
 
 Quality gates:
 
 - [ ] clean install/upgrade path across versions
-- [ ] rollback strategy documented
-- [ ] user documentation matches actual UI flow
-- [ ] HACS-facing metadata/docs fully consistent
+- [x] rollback strategy documented
+- [x] user documentation matches actual UI flow
+- [x] HACS-facing metadata/docs fully consistent
 
 Status:
 
-**Planned**
+**In Progress**
 
 ---
 

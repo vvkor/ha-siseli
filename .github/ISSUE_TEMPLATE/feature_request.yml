@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest an improvement for the Siseli integration
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe the user problem first. If the request needs new Siseli API behavior, note whether it already exists in `python-siseli`.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What user workflow is blocked or inconvenient today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the expected Home Assistant behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: sdk_status
+    attributes:
+      label: Siseli SDK status
+      description: If known, explain whether the required API capability already exists in `python-siseli`.

@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a reproducible problem in the Siseli integration
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please include Home Assistant versions, the integration version, and redacted diagnostics when possible.
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: 2024.7.0
+    validations:
+      required: true
+  - type: input
+    id: integration_version
+    attributes:
+      label: Siseli integration version
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: Installation method
+      options:
+        - HACS
+        - Manual copy
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the expected behavior and the actual result.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste redacted log output only. Do not include passwords, tokens, or personal identifiers.
+      render: shell
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics summary
+      description: Add any redacted diagnostics details that help reproduce the issue.

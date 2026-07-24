@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Support policy
+    url: https://github.com/vvkor/ha-siseli/blob/main/SUPPORT.md
+    about: Review supported scope, maintenance expectations, and required diagnostics.
+  - name: Setup and troubleshooting guide
+    url: https://github.com/vvkor/ha-siseli/blob/main/README.md
+    about: Check installation, configuration, upgrade, and troubleshooting steps first.
