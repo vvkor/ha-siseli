@@ -74,20 +74,20 @@ DataUpdateCoordinator
 
 These requirements are mandatory for public HACS use:
 
-- [ ] repository contains a valid custom component in `custom_components/siseli/`
-- [ ] `manifest.json` is complete and valid (domain, name, version, dependencies, requirements)
+- [x] repository contains a valid custom component in `custom_components/siseli/`
+- [x] `manifest.json` is complete and valid (domain, name, version, dependencies, requirements)
 - [ ] semantic version tags are published (`vX.Y.Z`)
-- [ ] clear `README.md` with install/setup/troubleshooting instructions
-- [ ] `hacs.json` present and valid (if used by current HACS expectations)
-- [ ] `LICENSE` included
-- [ ] `CHANGELOG.md` maintained
-- [ ] compatibility policy documented (supported Home Assistant versions)
+- [x] clear `README.md` with install/setup/troubleshooting instructions
+- [x] `hacs.json` present and valid (if used by current HACS expectations)
+- [x] `LICENSE` included
+- [x] `CHANGELOG.md` maintained
+- [x] compatibility policy documented (supported Home Assistant versions)
 - [ ] basic visuals/assets as needed by HACS listing/documentation
-- [ ] no secrets in logs/docs/examples
+- [x] no secrets in logs/docs/examples
 
 Status:
 
-**Planned**
+**In Progress**
 
 ---
 
@@ -98,13 +98,13 @@ Exact level targeting depends on current implementation maturity, but each phase
 
 Cross-cutting quality requirements:
 
-- [ ] config flow (no YAML-only setup)
-- [ ] reauth flow
-- [ ] unload support
+- [x] config flow (no YAML-only setup)
+- [x] reauth flow
+- [x] unload support
 - [ ] diagnostics with redaction
-- [ ] runtime error handling and availability behavior
+- [x] runtime error handling and availability behavior
 - [ ] tests for critical paths
-- [ ] documentation for setup and known limitations
+- [x] documentation for setup and known limitations
 - [ ] ownership/maintenance expectations documented
 
 ---
@@ -119,24 +119,24 @@ Deliver a working custom integration installable through HACS-compatible workflo
 
 Tasks:
 
-- [ ] repository scaffold for custom component
-- [ ] `manifest.json` and integration metadata
-- [ ] setup/unload for config entries
-- [ ] Config Flow with credential validation
-- [ ] initial DataUpdateCoordinator
-- [ ] dependency wiring to `python-siseli`
-- [ ] baseline docs (`README`, install, configuration)
+- [x] repository scaffold for custom component
+- [x] `manifest.json` and integration metadata
+- [x] setup/unload for config entries
+- [x] Config Flow with credential validation
+- [x] initial DataUpdateCoordinator
+- [x] dependency wiring to `python-siseli`
+- [x] baseline docs (`README`, install, configuration)
 
 Quality gates:
 
-- [ ] integration can be installed and configured from UI
-- [ ] unload/reload works correctly
-- [ ] authentication failures are user-readable
-- [ ] no blocking I/O in async paths
+- [x] integration can be installed and configured from UI
+- [x] unload/reload works correctly
+- [x] authentication failures are user-readable
+- [x] no blocking I/O in async paths
 
 Status:
 
-**Planned**
+**Done**
 
 ---
 
@@ -148,38 +148,38 @@ Expose the most useful inverter telemetry as production-grade HA entities.
 
 Initial sensor set:
 
-- [ ] Battery SOC
-- [ ] Battery Voltage
-- [ ] Battery Current
-- [ ] Battery Power
-- [ ] PV Voltage
-- [ ] PV Current
-- [ ] PV Power
-- [ ] Grid Voltage
-- [ ] Grid Frequency
-- [ ] Grid Power
-- [ ] Output Voltage
-- [ ] Output Frequency
-- [ ] Load Power
-- [ ] Inverter State
+- [x] Battery SOC
+- [x] Battery Voltage
+- [x] Battery Current
+- [x] Battery Power
+- [x] PV Voltage
+- [x] PV Current
+- [x] PV Power
+- [x] Grid Voltage
+- [x] Grid Frequency
+- [x] Grid Power
+- [x] Output Voltage
+- [x] Output Frequency
+- [x] Load Power
+- [x] Inverter State
 
 Entity quality requirements:
 
-- [ ] stable `unique_id` for each entity
-- [ ] proper `device_info` and device registry linkage
-- [ ] correct `device_class`, `state_class`, and native units where applicable
-- [ ] sensible naming and translation-ready strings
-- [ ] graceful `unavailable` behavior on API/network failures
+- [x] stable `unique_id` for each entity
+- [x] proper `device_info` and device registry linkage
+- [x] correct `device_class`, `state_class`, and native units where applicable
+- [x] sensible naming and translation-ready strings
+- [x] graceful `unavailable` behavior on API/network failures
 
 Quality gates:
 
-- [ ] entities survive restarts/reloads without duplication
-- [ ] values are mapped consistently and typed correctly
-- [ ] coordinator update failures do not crash platform
+- [x] entities survive restarts/reloads without duplication
+- [x] values are mapped consistently and typed correctly
+- [x] coordinator update failures do not crash platform
 
 Status:
 
-**Planned**
+**Done**
 
 ---
 
