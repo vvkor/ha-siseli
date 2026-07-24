@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 96" role="img" aria-labelledby="title desc">
+  <title id="title">Siseli integration logo</title>
+  <desc id="desc">A simple solar panel and sun icon for the Siseli Home Assistant integration.</desc>
+  <rect width="240" height="96" rx="18" fill="#0f172a"/>
+  <circle cx="50" cy="34" r="14" fill="#f59e0b"/>
+  <g stroke="#f59e0b" stroke-linecap="round" stroke-width="4">
+    <line x1="50" y1="10" x2="50" y2="2"/>
+    <line x1="50" y1="66" x2="50" y2="58"/>
+    <line x1="26" y1="34" x2="18" y2="34"/>
+    <line x1="82" y1="34" x2="74" y2="34"/>
+    <line x1="33" y1="17" x2="27" y2="11"/>
+    <line x1="67" y1="51" x2="73" y2="57"/>
+    <line x1="33" y1="51" x2="27" y2="57"/>
+    <line x1="67" y1="17" x2="73" y2="11"/>
+  </g>
+  <g transform="translate(92 18)">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#1d4ed8"/>
+    <g stroke="#bfdbfe" stroke-width="2">
+      <line x1="15" y1="0" x2="15" y2="40"/>
+      <line x1="30" y1="0" x2="30" y2="40"/>
+      <line x1="45" y1="0" x2="45" y2="40"/>
+      <line x1="0" y1="10" x2="60" y2="10"/>
+      <line x1="0" y1="20" x2="60" y2="20"/>
+      <line x1="0" y1="30" x2="60" y2="30"/>
+    </g>
+    <line x1="30" y1="40" x2="30" y2="58" stroke="#94a3b8" stroke-width="4"/>
+    <line x1="10" y1="58" x2="50" y2="58" stroke="#94a3b8" stroke-width="4"/>
+  </g>
+  <text x="168" y="56" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="26" font-weight="700">Siseli</text>
+</svg>
