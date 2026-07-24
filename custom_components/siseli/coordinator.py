@@ -6,13 +6,13 @@ import logging
 from datetime import timedelta
 from typing import Any
 
-from siseli import SiseliAuthError, SiseliClient, SiseliConnectionError
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+
+from siseli import SiseliAuthError, SiseliClient, SiseliConnectionError
 
 from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
 
