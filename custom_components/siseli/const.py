@@ -3,3 +3,9 @@
 DOMAIN = "siseli"
 
 DEFAULT_SCAN_INTERVAL = 30  # seconds
+MIN_SCAN_INTERVAL = 10  # seconds
+MAX_SCAN_INTERVAL = 300  # seconds
+
+CONF_SCAN_INTERVAL = "scan_interval"
+
+TO_REDACT = {"username", "password", "token", "access_token", "refresh_token"}

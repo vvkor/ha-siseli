@@ -8,11 +8,17 @@ from typing import Any
 import voluptuous as vol
 from siseli import SiseliAuthError, SiseliClient, SiseliConnectionError
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow, OptionsFlowResult
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN
+from .const import (
+    CONF_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+    MAX_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,6 +28,17 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_PASSWORD): str,
     }
 )
+
+
+def _options_schema(current_interval: int) -> vol.Schema:
+    return vol.Schema(
+        {
+            vol.Required(CONF_SCAN_INTERVAL, default=current_interval): vol.All(
+                vol.Coerce(int),
+                vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
+            ),
+        }
+    )
 
 
 async def _validate_credentials(
@@ -40,6 +57,11 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
     """Config flow for the Siseli integration."""
 
     VERSION = 1
+
+    @staticmethod
+    def async_get_options_flow(config_entry: Any) -> SiseliOptionsFlow:
+        """Return the options flow."""
+        return SiseliOptionsFlow()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -101,4 +123,23 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="reauth_confirm",
             data_schema=STEP_USER_DATA_SCHEMA,
             errors=errors,
+        )
+
+
+class SiseliOptionsFlow(OptionsFlow):
+    """Options flow for the Siseli integration."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> OptionsFlowResult:
+        """Handle options step."""
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+
+        current_interval = self.config_entry.options.get(
+            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+        )
+        return self.async_show_form(
+            step_id="init",
+            data_schema=_options_schema(current_interval),
         )
