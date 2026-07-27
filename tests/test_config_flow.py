@@ -204,7 +204,8 @@ async def test_validate_credentials_creates_client_in_executor(
 
     mock_add_executor_job.assert_awaited_once()
     mock_client.authenticate.assert_awaited_once()
-    assert mock_add_executor_job.await_args.args[0].keywords["account"] == MOCK_USERNAME
+    client_factory = mock_add_executor_job.await_args.args[0]
+    assert client_factory.keywords["account"] == MOCK_USERNAME
     assert info == {"title": MOCK_USERNAME}
 
 
