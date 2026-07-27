@@ -27,6 +27,11 @@ def _inject_app_id(client: SiseliClient) -> None:
     The Siseli Cloud API requires this header on every request, including
     the login call.  It returns error code 36 when the header is absent.
     """
+    if not hasattr(client, "_http") or not hasattr(client._http, "headers"):
+        raise AttributeError(
+            "SiseliClient does not expose '_http.headers'; cannot inject"
+            " IOT-Open-AppID.  Check the python-siseli library version."
+        )
     client._http.headers.update({"IOT-Open-AppID": SISELI_APP_ID})
 
 
