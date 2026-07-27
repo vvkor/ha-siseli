@@ -144,6 +144,7 @@ async def test_user_step_invalid_auth_logs_normalized_username(
     assert result["type"] == FlowResultType.FORM
     assert "Siseli authentication failed for username" in caplog.text
     assert MOCK_USERNAME in caplog.text
+    assert "bad creds" in caplog.text
     assert MOCK_PASSWORD not in caplog.text
 
 
@@ -303,7 +304,7 @@ async def test_reauth_invalid_auth(
 
     with patch(
         "custom_components.siseli.config_flow._validate_credentials",
-        side_effect=AuthenticationError("bad"),
+        side_effect=AuthenticationError("HTTP 401: invalid credentials"),
     ) as mock_validate_credentials:
         result = await entry.start_reauth_flow(hass)
         result = await hass.config_entries.flow.async_configure(
@@ -319,6 +320,7 @@ async def test_reauth_invalid_auth(
     )
     assert "Siseli re-authentication failed for username" in caplog.text
     assert MOCK_USERNAME in caplog.text
+    assert "HTTP 401: invalid credentials" in caplog.text
     assert MOCK_PASSWORD not in caplog.text
 
 

@@ -93,10 +93,11 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
 
             try:
                 info = await _validate_credentials(self.hass, user_input)
-            except AuthenticationError:
+            except AuthenticationError as err:
                 _LOGGER.warning(
-                    "Siseli authentication failed for username '%s'",
+                    "Siseli authentication failed for username '%s': %s",
                     username,
+                    err,
                 )
                 errors["base"] = "invalid_auth"
             except NetworkError:
@@ -131,10 +132,11 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
 
             try:
                 await _validate_credentials(self.hass, user_input)
-            except AuthenticationError:
+            except AuthenticationError as err:
                 _LOGGER.warning(
-                    "Siseli re-authentication failed for username '%s'",
+                    "Siseli re-authentication failed for username '%s': %s",
                     username,
+                    err,
                 )
                 errors["base"] = "invalid_auth"
             except NetworkError:
