@@ -52,7 +52,7 @@ async def _validate_credentials(
 ) -> dict[str, Any]:
     """Validate credentials against the Siseli cloud."""
     client = SiseliClient(
-        username=data[CONF_USERNAME],
+        account=data[CONF_USERNAME],
         password=data[CONF_PASSWORD],
     )
     await client.authenticate()

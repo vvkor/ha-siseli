@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from homeassistant import config_entries
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
@@ -20,8 +19,12 @@ from custom_components.siseli.const import (
     MIN_SCAN_INTERVAL,
 )
 
-from .conftest import MOCK_PASSWORD, MOCK_USERNAME, SiseliAuthError, SiseliConnectionError
-
+from .conftest import (
+    MOCK_PASSWORD,
+    MOCK_USERNAME,
+    AuthenticationError,
+    NetworkError,
+)
 
 # ---------------------------------------------------------------------------
 # Config flow — user step
@@ -54,7 +57,7 @@ async def test_user_step_invalid_auth(hass: HomeAssistant) -> None:
     """Test that invalid credentials show the correct error."""
     with patch(
         "custom_components.siseli.config_flow._validate_credentials",
-        side_effect=SiseliAuthError("bad creds"),
+        side_effect=AuthenticationError("bad creds"),
     ):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -72,7 +75,7 @@ async def test_user_step_cannot_connect(hass: HomeAssistant) -> None:
     """Test that connection errors show the correct error."""
     with patch(
         "custom_components.siseli.config_flow._validate_credentials",
-        side_effect=SiseliConnectionError("timeout"),
+        side_effect=NetworkError("timeout"),
     ):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -136,10 +139,6 @@ async def test_user_step_already_configured(hass: HomeAssistant) -> None:
 
 async def test_reauth_success(hass: HomeAssistant) -> None:
     """Test successful reauthentication updates the entry."""
-    from unittest.mock import patch
-
-    from .conftest import DEFAULT_DATA
-
     entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id=MOCK_USERNAME,
@@ -156,7 +155,8 @@ async def test_reauth_success(hass: HomeAssistant) -> None:
             "custom_components.siseli.coordinator.SiseliClient",
         ) as mock_client_class,
     ):
-        mock_client_class.return_value.get_data.return_value = DEFAULT_DATA.copy()
+        mock_client_class.return_value.get_all_devices = AsyncMock(return_value=[])
+        mock_client_class.return_value.get_device_state = AsyncMock()
         result = await entry.start_reauth_flow(hass)
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "reauth_confirm"
@@ -182,7 +182,7 @@ async def test_reauth_invalid_auth(hass: HomeAssistant) -> None:
 
     with patch(
         "custom_components.siseli.config_flow._validate_credentials",
-        side_effect=SiseliAuthError("bad"),
+        side_effect=AuthenticationError("bad"),
     ):
         result = await entry.start_reauth_flow(hass)
         result = await hass.config_entries.flow.async_configure(
@@ -250,7 +250,7 @@ async def test_options_flow_rejects_out_of_range(
     )
     entry.add_to_hass(hass)
 
-    result = await hass.config_entries.options.async_init(entry.entry_id)
+    await hass.config_entries.options.async_init(entry.entry_id)
 
     import voluptuous as vol
 
