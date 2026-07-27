@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.config_entries import SOURCE_USER, ConfigEntry
@@ -111,11 +111,14 @@ async def test_async_update_data_creates_client_in_executor(
     """Client is created via executor job when missing."""
     coordinator, mock_client = _make_coordinator(hass)
     coordinator.client = None
-    hass.async_add_executor_job = AsyncMock(return_value=mock_client)
+    with patch.object(
+        hass,
+        "async_add_executor_job",
+        new=AsyncMock(return_value=mock_client),
+    ) as mock_add_executor_job:
+        await coordinator._async_update_data()
 
-    await coordinator._async_update_data()
-
-    hass.async_add_executor_job.assert_awaited_once()
+    mock_add_executor_job.assert_awaited_once()
     assert coordinator.client is mock_client
 
 

@@ -36,6 +36,7 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         creds = entry.data
         self._account = creds[CONF_USERNAME]
         self._password = creds[CONF_PASSWORD]
+        # Created lazily in _async_update_data to avoid blocking SSL setup on the event loop.
         self.client: SiseliClient | None = None
         self._consecutive_failures = 0
         self._device_id: str | None = None
