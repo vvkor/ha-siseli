@@ -21,6 +21,15 @@ from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, SISELI_APP
 _LOGGER = logging.getLogger(__name__)
 
 
+def _inject_app_id(client: SiseliClient) -> None:
+    """Inject the IOT-Open-AppID header into the client's HTTP session.
+
+    The Siseli Cloud API requires this header on every request, including
+    the login call.  It returns error code 36 when the header is absent.
+    """
+    client._http.headers.update({"IOT-Open-AppID": SISELI_APP_ID})
+
+
 class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator that fetches data from the Siseli cloud via python-siseli."""
 
@@ -56,16 +65,7 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                                 account=self._account, password=self._password,
                             )
                         )
-                        if not SISELI_APP_ID:
-                            _LOGGER.error(
-                                "SISELI_APP_ID constant is empty; IOT-Open-AppID"
-                                " header will be missing and authentication will"
-                                " fail with error code 36"
-                            )
-                        else:
-                            self.client._http.headers.update(
-                                {"IOT-Open-AppID": SISELI_APP_ID}
-                            )
+                        _inject_app_id(self.client)
             if self._device_id is None:
                 devices = await self.client.get_all_devices()
                 if not devices:

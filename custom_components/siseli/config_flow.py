@@ -25,8 +25,8 @@ from .const import (
     DOMAIN,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
-    SISELI_APP_ID,
 )
+from .coordinator import _inject_app_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,21 +68,6 @@ async def _validate_credentials(
     _inject_app_id(client)
     await client.authenticate()
     return {"title": username}
-
-
-def _inject_app_id(client: SiseliClient) -> None:
-    """Inject the IOT-Open-AppID header into the client's HTTP session.
-
-    The Siseli Cloud API requires this header on every request, including
-    the login call.  It returns error code 36 when the header is absent.
-    """
-    if not SISELI_APP_ID:
-        _LOGGER.error(
-            "SISELI_APP_ID constant is empty; IOT-Open-AppID header will be"
-            " missing and authentication will fail with error code 36"
-        )
-        return
-    client._http.headers.update({"IOT-Open-AppID": SISELI_APP_ID})
 
 
 class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
