@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.siseli.config_flow import _validate_credentials
 from custom_components.siseli.const import (
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
@@ -18,7 +19,6 @@ from custom_components.siseli.const import (
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
 )
-from custom_components.siseli.config_flow import _validate_credentials
 
 from .conftest import (
     MOCK_PASSWORD,
