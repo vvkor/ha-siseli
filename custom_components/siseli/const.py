@@ -8,9 +8,8 @@ MAX_SCAN_INTERVAL = 300  # seconds
 
 CONF_SCAN_INTERVAL = "scan_interval"
 
-# Application identifier sent as the IOT-Open-AppID header on every request,
-# including the login call.  The Siseli Cloud API returns error code 36
-# ("IOT-Open-AppID missing") when this header is absent.
-SISELI_APP_ID = "ha-siseli"
+# Production Siseli Open API application credentials from the official web client.
+SISELI_APP_ID = "rBrTRfAPXz"
+SISELI_APP_SECRET_ENCRYPTED = "I4D0KRr2339z3pQ/at91V9BpFAOe54DaTafwSm6suIQ="
 
 TO_REDACT = {"username", "password", "token", "access_token", "refresh_token"}

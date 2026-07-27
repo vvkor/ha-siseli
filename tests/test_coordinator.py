@@ -15,7 +15,6 @@ from custom_components.siseli.const import (
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
-    SISELI_APP_ID,
 )
 from custom_components.siseli.coordinator import SiseliCoordinator
 
@@ -126,10 +125,11 @@ async def test_async_update_data_creates_client_in_executor(
 async def test_async_update_data_injects_iot_open_app_id_header(
     hass: HomeAssistant,
 ) -> None:
-    """Coordinator injects IOT-Open-AppID on the client HTTP session after creation."""
+    """Coordinator attaches open-auth request signing hook after client creation."""
     coordinator, mock_client = _make_coordinator(hass)
     coordinator.client = None
     mock_http = MagicMock()
+    mock_http.event_hooks = {"request": []}
     mock_client._http = mock_http
 
     with patch.object(
@@ -139,7 +139,7 @@ async def test_async_update_data_injects_iot_open_app_id_header(
     ):
         await coordinator._async_update_data()
 
-    mock_http.headers.update.assert_called_once_with({"IOT-Open-AppID": SISELI_APP_ID})
+    assert len(mock_http.event_hooks["request"]) == 1
 
 
 async def test_async_update_data_no_devices(hass: HomeAssistant) -> None:

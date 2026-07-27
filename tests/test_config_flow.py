@@ -19,7 +19,6 @@ from custom_components.siseli.const import (
     DOMAIN,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
-    SISELI_APP_ID,
 )
 
 from .conftest import (
@@ -215,8 +214,9 @@ async def test_validate_credentials_creates_client_in_executor(
 async def test_validate_credentials_injects_iot_open_app_id_header(
     hass: HomeAssistant,
 ) -> None:
-    """validate_credentials injects IOT-Open-AppID on the client HTTP session."""
+    """validate_credentials attaches open-auth request signing hook."""
     mock_http = MagicMock()
+    mock_http.event_hooks = {"request": []}
     mock_client = AsyncMock()
     mock_client.authenticate = AsyncMock()
     mock_client._http = mock_http
@@ -231,7 +231,7 @@ async def test_validate_credentials_injects_iot_open_app_id_header(
             {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
         )
 
-    mock_http.headers.update.assert_called_once_with({"IOT-Open-AppID": SISELI_APP_ID})
+    assert len(mock_http.event_hooks["request"]) == 1
 
 
 async def test_user_step_already_configured(hass: HomeAssistant) -> None:

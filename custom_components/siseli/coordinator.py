@@ -16,23 +16,15 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from siseli import AuthenticationError, NetworkError, SiseliClient
 
-from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, SISELI_APP_ID
+from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .open_auth import attach_open_auth
 
 _LOGGER = logging.getLogger(__name__)
 
 
 def _inject_app_id(client: SiseliClient) -> None:
-    """Inject the IOT-Open-AppID header into the client's HTTP session.
-
-    The Siseli Cloud API requires this header on every request, including
-    the login call.  It returns error code 36 when the header is absent.
-    """
-    if not hasattr(client, "_http") or not hasattr(client._http, "headers"):
-        raise AttributeError(
-            "SiseliClient does not expose '_http.headers'; cannot inject"
-            " IOT-Open-AppID.  Check the python-siseli library version."
-        )
-    client._http.headers.update({"IOT-Open-AppID": SISELI_APP_ID})
+    """Backwards-compatible wrapper for attaching request signing."""
+    attach_open_auth(client)
 
 
 class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
