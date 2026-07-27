@@ -18,6 +18,7 @@ from custom_components.siseli.const import (
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
 )
+from custom_components.siseli.config_flow import _validate_credentials
 
 from .conftest import (
     MOCK_PASSWORD,
@@ -105,6 +106,24 @@ async def test_user_step_unexpected_error(hass: HomeAssistant) -> None:
 
     assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {"base": "unknown"}
+
+
+async def test_validate_credentials_creates_client_in_executor(
+    hass: HomeAssistant,
+) -> None:
+    """Credential validation creates client via executor job."""
+    mock_client = AsyncMock()
+    mock_client.authenticate = AsyncMock()
+    hass.async_add_executor_job = AsyncMock(return_value=mock_client)
+
+    info = await _validate_credentials(
+        hass,
+        {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+    )
+
+    hass.async_add_executor_job.assert_awaited_once()
+    mock_client.authenticate.assert_awaited_once()
+    assert info == {"title": MOCK_USERNAME}
 
 
 async def test_user_step_already_configured(hass: HomeAssistant) -> None:

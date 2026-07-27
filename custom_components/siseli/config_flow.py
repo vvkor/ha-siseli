@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from functools import partial
 from typing import Any
 
 import voluptuous as vol
@@ -51,9 +52,12 @@ async def _validate_credentials(
     hass: HomeAssistant, data: dict[str, Any]
 ) -> dict[str, Any]:
     """Validate credentials against the Siseli cloud."""
-    client = SiseliClient(
-        account=data[CONF_USERNAME],
-        password=data[CONF_PASSWORD],
+    client = await hass.async_add_executor_job(
+        partial(
+            SiseliClient,
+            data[CONF_USERNAME],
+            data[CONF_PASSWORD],
+        )
     )
     await client.authenticate()
     return {"title": data[CONF_USERNAME]}

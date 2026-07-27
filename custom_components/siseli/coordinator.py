@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import timedelta
+from functools import partial
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -33,10 +34,9 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             config_entry=entry,
         )
         creds = entry.data
-        self.client = SiseliClient(
-            account=creds[CONF_USERNAME],
-            password=creds[CONF_PASSWORD],
-        )
+        self._account = creds[CONF_USERNAME]
+        self._password = creds[CONF_PASSWORD]
+        self.client: SiseliClient | None = None
         self._consecutive_failures = 0
         self._device_id: str | None = None
 
@@ -44,6 +44,14 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Fetch data from the Siseli cloud."""
         _LOGGER.debug("Fetching data from Siseli cloud")
         try:
+            if self.client is None:
+                self.client = await self.hass.async_add_executor_job(
+                    partial(
+                        SiseliClient,
+                        self._account,
+                        self._password,
+                    )
+                )
             if self._device_id is None:
                 devices = await self.client.get_all_devices()
                 if not devices:
