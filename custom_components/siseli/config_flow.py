@@ -48,18 +48,24 @@ def _options_schema(current_interval: int) -> vol.Schema:
     )
 
 
+def _normalize_user_input(data: dict[str, Any]) -> dict[str, Any]:
+    """Return config flow user input with a normalized username."""
+    return {**data, CONF_USERNAME: data[CONF_USERNAME].strip()}
+
+
 async def _validate_credentials(
     hass: HomeAssistant, data: dict[str, Any]
 ) -> dict[str, Any]:
     """Validate credentials against the Siseli cloud."""
+    username = data[CONF_USERNAME].strip()
     client = await hass.async_add_executor_job(
         partial(
             SiseliClient,
-            account=data[CONF_USERNAME], password=data[CONF_PASSWORD],
+            account=username, password=data[CONF_PASSWORD],
         )
     )
     await client.authenticate()
-    return {"title": data[CONF_USERNAME]}
+    return {"title": username}
 
 
 class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -79,12 +85,19 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            await self.async_set_unique_id(user_input[CONF_USERNAME])
+            user_input = _normalize_user_input(user_input)
+            username = user_input[CONF_USERNAME]
+
+            await self.async_set_unique_id(username)
             self._abort_if_unique_id_configured()
 
             try:
                 info = await _validate_credentials(self.hass, user_input)
             except AuthenticationError:
+                _LOGGER.warning(
+                    "Siseli authentication failed for username '%s'",
+                    username,
+                )
                 errors["base"] = "invalid_auth"
             except NetworkError:
                 errors["base"] = "cannot_connect"
@@ -113,9 +126,16 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            user_input = _normalize_user_input(user_input)
+            username = user_input[CONF_USERNAME]
+
             try:
                 await _validate_credentials(self.hass, user_input)
             except AuthenticationError:
+                _LOGGER.warning(
+                    "Siseli re-authentication failed for username '%s'",
+                    username,
+                )
                 errors["base"] = "invalid_auth"
             except NetworkError:
                 errors["base"] = "cannot_connect"
