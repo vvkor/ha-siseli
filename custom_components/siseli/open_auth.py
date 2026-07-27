@@ -18,6 +18,7 @@ from typing import Any
 from urllib.parse import parse_qsl
 from uuid import uuid4
 
+import httpx
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from .const import SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED
@@ -122,14 +123,17 @@ def attach_open_auth(client: Any) -> None:
             "SiseliClient does not expose '_http.event_hooks'; cannot attach signing hook."
         )
 
-    is_attached = getattr(client, "_siseli_open_auth_attached", False)
-    if isinstance(is_attached, bool) and is_attached:
-        return
+    try:
+        if client.__dict__.get("_siseli_open_auth_attached", False):
+            return
+    except AttributeError:
+        if getattr(client, "_siseli_open_auth_attached", False):
+            return
 
     app_secret = decrypt_open_secret(SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED)
     timezone = getattr(client, "_timezone", "UTC")
 
-    async def _sign_request(request) -> None:
+    async def _sign_request(request: httpx.Request) -> None:
         nonce = uuid4().hex
         headers = build_open_headers(
             method=request.method,

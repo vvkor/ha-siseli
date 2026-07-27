@@ -8,22 +8,23 @@ import httpx
 
 from custom_components.siseli.const import SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED
 from custom_components.siseli.open_auth import (
+    _sha256_hex,
     attach_open_auth,
     build_open_headers,
     decrypt_open_secret,
 )
 
 
-class _HookHttpClient:
+class _MockHttpClient:
     def __init__(self) -> None:
         self.event_hooks = {"request": []}
 
 
-class _HookClient:
+class _MockSiseliClient:
     _timezone = "Europe/Moscow"
 
     def __init__(self) -> None:
-        self._http = _HookHttpClient()
+        self._http = _MockHttpClient()
 
 
 def test_decrypt_open_secret_derives_expected_secret_from_app_id() -> None:
@@ -107,7 +108,7 @@ async def test_header_generation_includes_required_iot_open_values() -> None:
     """Request hook injects required IOT-Open-* and timezone headers."""
     secret = decrypt_open_secret(SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED)
 
-    client = _HookClient()
+    client = _MockSiseliClient()
     attach_open_auth(client)
     assert len(client._http.event_hooks["request"]) == 1
 
@@ -128,6 +129,7 @@ async def test_header_generation_includes_required_iot_open_values() -> None:
         assert key in request.headers
     assert request.headers["IOT-Time-Zone"] == "Europe/Moscow"
     assert request.headers["IOT-Open-AppID"] == SISELI_APP_ID
-    assert request.headers["IOT-Open-Body-Hash"] == hashlib.sha256(request.content).hexdigest()
+    expected_hash = _sha256_hex(request.content)
+    assert request.headers["IOT-Open-Body-Hash"] == expected_hash
     assert request.headers["IOT-Open-Sign"]
     assert request.headers["IOT-Open-Sign"] != secret
