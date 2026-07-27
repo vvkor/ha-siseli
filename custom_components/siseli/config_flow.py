@@ -48,6 +48,12 @@ def _options_schema(current_interval: int) -> vol.Schema:
     )
 
 
+def _normalize_user_input(data: dict[str, Any]) -> dict[str, Any]:
+    """Normalize config flow user input."""
+    data[CONF_USERNAME] = data[CONF_USERNAME].strip()
+    return data
+
+
 async def _validate_credentials(
     hass: HomeAssistant, data: dict[str, Any]
 ) -> dict[str, Any]:
@@ -80,8 +86,8 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            username = user_input[CONF_USERNAME].strip()
-            user_input = {**user_input, CONF_USERNAME: username}
+            user_input = _normalize_user_input(user_input)
+            username = user_input[CONF_USERNAME]
 
             await self.async_set_unique_id(username)
             self._abort_if_unique_id_configured()
@@ -121,8 +127,8 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            username = user_input[CONF_USERNAME].strip()
-            user_input = {**user_input, CONF_USERNAME: username}
+            user_input = _normalize_user_input(user_input)
+            username = user_input[CONF_USERNAME]
 
             try:
                 await _validate_credentials(self.hass, user_input)

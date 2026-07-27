@@ -137,7 +137,9 @@ async def test_user_step_invalid_auth_logs_normalized_username(
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
         )
-        await hass.config_entries.flow.async_configure(result["flow_id"], user_input)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input
+        )
 
     assert result["type"] == FlowResultType.FORM
     assert "Siseli authentication failed for username" in caplog.text
