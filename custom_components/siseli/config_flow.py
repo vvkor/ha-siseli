@@ -55,8 +55,7 @@ async def _validate_credentials(
     client = await hass.async_add_executor_job(
         partial(
             SiseliClient,
-            data[CONF_USERNAME],
-            data[CONF_PASSWORD],
+            account=data[CONF_USERNAME], password=data[CONF_PASSWORD],
         )
     )
     await client.authenticate()
