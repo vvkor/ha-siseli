@@ -95,11 +95,15 @@ async def test_header_generation_includes_required_iot_open_values() -> None:
     """Request hook injects required IOT-Open-* and timezone headers."""
     secret = decrypt_open_secret(SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED)
 
+    class _HttpClient:
+        def __init__(self) -> None:
+            self.event_hooks = {"request": []}
+
     class _Client:
         _timezone = "Europe/Moscow"
 
         def __init__(self) -> None:
-            self._http = type("_Http", (), {"event_hooks": {"request": []}})()
+            self._http = _HttpClient()
 
     client = _Client()
     attach_open_auth(client)

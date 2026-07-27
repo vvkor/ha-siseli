@@ -22,8 +22,8 @@ from .open_auth import attach_open_auth
 _LOGGER = logging.getLogger(__name__)
 
 
-def _inject_app_id(client: SiseliClient) -> None:
-    """Backwards-compatible wrapper for attaching request signing."""
+def _attach_open_auth(client: SiseliClient) -> None:
+    """Attach Siseli open-platform request signing to the SDK client."""
     attach_open_auth(client)
 
 
@@ -62,7 +62,7 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                                 account=self._account, password=self._password,
                             )
                         )
-                        _inject_app_id(self.client)
+                        _attach_open_auth(self.client)
             if self._device_id is None:
                 devices = await self.client.get_all_devices()
                 if not devices:

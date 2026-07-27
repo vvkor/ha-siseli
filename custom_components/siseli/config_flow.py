@@ -26,7 +26,7 @@ from .const import (
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
 )
-from .coordinator import _inject_app_id
+from .coordinator import _attach_open_auth
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ async def _validate_credentials(
             account=username, password=data[CONF_PASSWORD],
         )
     )
-    _inject_app_id(client)
+    _attach_open_auth(client)
     await client.authenticate()
     return {"title": username}
 

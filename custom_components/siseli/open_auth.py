@@ -7,6 +7,7 @@ import hashlib
 import hmac
 from collections.abc import Iterable
 from functools import lru_cache
+from typing import Any
 from urllib.parse import parse_qsl
 from uuid import uuid4
 
@@ -31,12 +32,14 @@ def _sha256_hex(raw: bytes) -> str:
 
 
 def _md5_hex(raw: bytes) -> str:
+    # MD5 is required by the Siseli Open signing protocol (HMAC-SHA256 output -> MD5).
     return hashlib.md5(raw).hexdigest()
 
 
 @lru_cache(maxsize=4)
 def decrypt_open_secret(app_id: str, encrypted_secret: str) -> str:
     """Decrypt encrypted Siseli app secret with CryptoJS-compatible AES-CBC/ZeroPadding."""
+    # MD5(app_id) key/iv derivation is required by the official web client behavior.
     app_md5 = hashlib.md5(app_id.encode("utf-8")).hexdigest().lower()
     key = app_md5[:16].encode("utf-8")
     iv = app_md5[16:].encode("utf-8")
@@ -103,14 +106,14 @@ def build_open_headers(
     }
 
 
-def attach_open_auth(client) -> None:
+def attach_open_auth(client: Any) -> None:
     """Attach signed-request hook to SiseliClient's internal httpx client."""
     if not hasattr(client, "_http") or not hasattr(client._http, "event_hooks"):
         raise AttributeError(
             "SiseliClient does not expose '_http.event_hooks'; cannot attach signing hook."
         )
 
-    if bool(getattr(client, "__dict__", {}).get("_siseli_open_auth_attached", False)):
+    if getattr(client, "__dict__", {}).get("_siseli_open_auth_attached", False):
         return
 
     app_secret = decrypt_open_secret(SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED)
