@@ -16,7 +16,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from siseli import AuthenticationError, NetworkError, SiseliClient
 
-from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, SISELI_APP_ID
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,6 +56,16 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                                 account=self._account, password=self._password,
                             )
                         )
+                        if not SISELI_APP_ID:
+                            _LOGGER.error(
+                                "SISELI_APP_ID constant is empty; IOT-Open-AppID"
+                                " header will be missing and authentication will"
+                                " fail with error code 36"
+                            )
+                        else:
+                            self.client._http.headers.update(
+                                {"IOT-Open-AppID": SISELI_APP_ID}
+                            )
             if self._device_id is None:
                 devices = await self.client.get_all_devices()
                 if not devices:

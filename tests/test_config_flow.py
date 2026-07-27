@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant import config_entries
@@ -19,6 +19,7 @@ from custom_components.siseli.const import (
     DOMAIN,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
+    SISELI_APP_ID,
 )
 
 from .conftest import (
@@ -190,6 +191,7 @@ async def test_validate_credentials_creates_client_in_executor(
     """Credential validation creates client via executor job."""
     mock_client = AsyncMock()
     mock_client.authenticate = AsyncMock()
+    mock_client._http = MagicMock()
     with patch.object(
         hass,
         "async_add_executor_job",
@@ -208,6 +210,28 @@ async def test_validate_credentials_creates_client_in_executor(
     client_factory = mock_add_executor_job.await_args.args[0]
     assert client_factory.keywords["account"] == MOCK_USERNAME
     assert info == {"title": MOCK_USERNAME}
+
+
+async def test_validate_credentials_injects_iot_open_app_id_header(
+    hass: HomeAssistant,
+) -> None:
+    """validate_credentials injects IOT-Open-AppID on the client HTTP session."""
+    mock_http = MagicMock()
+    mock_client = AsyncMock()
+    mock_client.authenticate = AsyncMock()
+    mock_client._http = mock_http
+
+    with patch.object(
+        hass,
+        "async_add_executor_job",
+        new=AsyncMock(return_value=mock_client),
+    ):
+        await _validate_credentials(
+            hass,
+            {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+        )
+
+    mock_http.headers.update.assert_called_once_with({"IOT-Open-AppID": SISELI_APP_ID})
 
 
 async def test_user_step_already_configured(hass: HomeAssistant) -> None:
