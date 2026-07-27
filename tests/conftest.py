@@ -81,9 +81,6 @@ sys.modules.setdefault("siseli", _fake_siseli)
 # Re-export types so tests can import from this module
 AuthenticationError = _AuthenticationError
 NetworkError = _NetworkError
-# Backward-compatible aliases used in existing tests
-SiseliAuthError = _AuthenticationError
-SiseliConnectionError = _NetworkError
 SiseliClient = _SiseliClient
 DEFAULT_DATA = _DEFAULT_DATA
 

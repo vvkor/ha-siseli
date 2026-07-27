@@ -22,8 +22,8 @@ from custom_components.siseli.const import (
 from .conftest import (
     MOCK_PASSWORD,
     MOCK_USERNAME,
-    SiseliAuthError,
-    SiseliConnectionError,
+    AuthenticationError,
+    NetworkError,
 )
 
 # ---------------------------------------------------------------------------
@@ -57,7 +57,7 @@ async def test_user_step_invalid_auth(hass: HomeAssistant) -> None:
     """Test that invalid credentials show the correct error."""
     with patch(
         "custom_components.siseli.config_flow._validate_credentials",
-        side_effect=SiseliAuthError("bad creds"),
+        side_effect=AuthenticationError("bad creds"),
     ):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -75,7 +75,7 @@ async def test_user_step_cannot_connect(hass: HomeAssistant) -> None:
     """Test that connection errors show the correct error."""
     with patch(
         "custom_components.siseli.config_flow._validate_credentials",
-        side_effect=SiseliConnectionError("timeout"),
+        side_effect=NetworkError("timeout"),
     ):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -182,7 +182,7 @@ async def test_reauth_invalid_auth(hass: HomeAssistant) -> None:
 
     with patch(
         "custom_components.siseli.config_flow._validate_credentials",
-        side_effect=SiseliAuthError("bad"),
+        side_effect=AuthenticationError("bad"),
     ):
         result = await entry.start_reauth_flow(hass)
         result = await hass.config_entries.flow.async_configure(

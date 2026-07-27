@@ -76,4 +76,5 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
         self._consecutive_failures = 0
         _LOGGER.debug("Siseli data updated successfully")
+        # state.fields is a dict[str, StateAttribute]; each StateAttribute has a .value
         return {key: attr.value for key, attr in state.fields.items()}
