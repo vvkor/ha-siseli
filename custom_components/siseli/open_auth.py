@@ -31,13 +31,13 @@ def _sha256_hex(raw: bytes) -> str:
 
 
 def _md5_hex(raw: bytes) -> str:
-    return hashlib.md5(raw).hexdigest()  # noqa: S324
+    return hashlib.md5(raw).hexdigest()
 
 
 @lru_cache(maxsize=4)
 def decrypt_open_secret(app_id: str, encrypted_secret: str) -> str:
     """Decrypt encrypted Siseli app secret with CryptoJS-compatible AES-CBC/ZeroPadding."""
-    app_md5 = hashlib.md5(app_id.encode("utf-8")).hexdigest().lower()  # noqa: S324
+    app_md5 = hashlib.md5(app_id.encode("utf-8")).hexdigest().lower()
     key = app_md5[:16].encode("utf-8")
     iv = app_md5[16:].encode("utf-8")
     cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
@@ -110,7 +110,7 @@ def attach_open_auth(client) -> None:
             "SiseliClient does not expose '_http.event_hooks'; cannot attach signing hook."
         )
 
-    if getattr(client, "_siseli_open_auth_attached", False):
+    if bool(getattr(client, "__dict__", {}).get("_siseli_open_auth_attached", False)):
         return
 
     app_secret = decrypt_open_secret(SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED)

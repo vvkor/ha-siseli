@@ -58,7 +58,7 @@ def test_post_request_signing_with_json_body() -> None:
 def test_unicode_json_body_signing() -> None:
     """Unicode body content must be hashed/signatured as UTF-8 bytes."""
     secret = decrypt_open_secret(SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED)
-    body = '{"text":"Привет 🌞"}'.encode("utf-8")
+    body = '{"text":"Привет 🌞"}'.encode()
     headers = build_open_headers(
         method="POST",
         query="",
