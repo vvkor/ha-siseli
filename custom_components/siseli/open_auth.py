@@ -123,12 +123,8 @@ def attach_open_auth(client: Any) -> None:
             "SiseliClient does not expose '_http.event_hooks'; cannot attach signing hook."
         )
 
-    try:
-        if client.__dict__.get("_siseli_open_auth_attached", False):
-            return
-    except AttributeError:
-        if getattr(client, "_siseli_open_auth_attached", False):
-            return
+    if getattr(client, "_siseli_open_auth_attached", False) is True:
+        return
 
     app_secret = decrypt_open_secret(SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED)
     timezone = getattr(client, "_timezone", "UTC")

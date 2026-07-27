@@ -27,7 +27,7 @@ class _MockSiseliClient:
         self._http = _MockHttpClient()
 
 
-def test_decrypt_open_secret_derives_expected_secret_from_app_id() -> None:
+def test_decrypt_open_secret_with_app_id() -> None:
     """Encrypted Open secret is decrypted with AppID-derived key/IV."""
     assert (
         decrypt_open_secret(SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED)
