@@ -12,23 +12,47 @@ import pytest
 # Fake python-siseli module — installed before any integration code is loaded
 # ---------------------------------------------------------------------------
 
-class _SiseliAuthError(Exception):
+
+class _AuthenticationError(Exception):
     """Fake authentication error."""
 
 
-class _SiseliConnectionError(Exception):
-    """Fake connection error."""
+class _NetworkError(Exception):
+    """Fake network error."""
+
+
+class _StateAttribute:
+    """Fake StateAttribute with a value."""
+
+    def __init__(self, value) -> None:
+        self.value = value
+
+
+class _DeviceState:
+    """Fake DeviceState with a fields mapping."""
+
+    def __init__(self, fields: dict) -> None:
+        self.fields = {k: _StateAttribute(v) for k, v in fields.items()}
+
+
+class _Device:
+    """Fake Device with an id."""
+
+    def __init__(self, device_id: str) -> None:
+        self.id = device_id
 
 
 class _SiseliClient:
     """Fake Siseli client."""
 
-    def __init__(self, username: str, password: str) -> None:
-        self.username = username
-        # noqa: S105 — intentional test fixture, not a real credential
+    def __init__(self, account: str, password: str) -> None:
+        self.account = account
         self.password = password
         self.authenticate = AsyncMock()
-        self.get_data = AsyncMock(return_value=_DEFAULT_DATA.copy())
+        self.get_all_devices = AsyncMock(return_value=[_Device("device-001")])
+        self.get_device_state = AsyncMock(
+            return_value=_DeviceState(_DEFAULT_DATA.copy())
+        )
 
 
 _DEFAULT_DATA: dict = {
@@ -49,14 +73,17 @@ _DEFAULT_DATA: dict = {
 }
 
 _fake_siseli = ModuleType("siseli")
-_fake_siseli.SiseliAuthError = _SiseliAuthError
-_fake_siseli.SiseliConnectionError = _SiseliConnectionError
+_fake_siseli.AuthenticationError = _AuthenticationError
+_fake_siseli.NetworkError = _NetworkError
 _fake_siseli.SiseliClient = _SiseliClient
 sys.modules.setdefault("siseli", _fake_siseli)
 
 # Re-export types so tests can import from this module
-SiseliAuthError = _SiseliAuthError
-SiseliConnectionError = _SiseliConnectionError
+AuthenticationError = _AuthenticationError
+NetworkError = _NetworkError
+# Backward-compatible aliases used in existing tests
+SiseliAuthError = _AuthenticationError
+SiseliConnectionError = _NetworkError
 SiseliClient = _SiseliClient
 DEFAULT_DATA = _DEFAULT_DATA
 
@@ -77,7 +104,7 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 # ---------------------------------------------------------------------------
 
 MOCK_USERNAME = "test@example.com"
-MOCK_PASSWORD = "secret"  # noqa: S105
+MOCK_PASSWORD = "secret"
 
 
 @pytest.fixture
@@ -85,7 +112,8 @@ def mock_siseli_client():
     """Return a fresh mock SiseliClient."""
     client = MagicMock(spec=_SiseliClient)
     client.authenticate = AsyncMock()
-    client.get_data = AsyncMock(return_value=_DEFAULT_DATA.copy())
+    client.get_all_devices = AsyncMock(return_value=[_Device("device-001")])
+    client.get_device_state = AsyncMock(return_value=_DeviceState(_DEFAULT_DATA.copy()))
     return client
 
 
@@ -99,4 +127,3 @@ def mock_config_entry_data():
 def mock_config_entry_options():
     """Return standard config entry options."""
     return {}
-

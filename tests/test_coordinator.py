@@ -5,8 +5,7 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-from homeassistant.config_entries import ConfigEntry, SOURCE_USER
+from homeassistant.config_entries import SOURCE_USER, ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
@@ -23,10 +22,11 @@ from .conftest import (
     DEFAULT_DATA,
     MOCK_PASSWORD,
     MOCK_USERNAME,
-    SiseliAuthError,
-    SiseliConnectionError,
+    AuthenticationError,
+    NetworkError,
+    _Device,
+    _DeviceState,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -54,7 +54,8 @@ def _make_coordinator(hass: HomeAssistant, options: dict | None = None) -> tuple
     """Create a coordinator with a mocked SiseliClient."""
     entry = _make_entry(hass, options)
     mock_client = MagicMock()
-    mock_client.get_data = AsyncMock(return_value=DEFAULT_DATA.copy())
+    mock_client.get_all_devices = AsyncMock(return_value=[_Device("device-001")])
+    mock_client.get_device_state = AsyncMock(return_value=_DeviceState(DEFAULT_DATA.copy()))
     with patch("custom_components.siseli.coordinator.SiseliClient", return_value=mock_client):
         coordinator = SiseliCoordinator(hass, entry)
     return coordinator, mock_client
@@ -84,7 +85,7 @@ async def test_coordinator_uses_options_scan_interval(hass: HomeAssistant) -> No
 
 async def test_async_update_data_success(hass: HomeAssistant) -> None:
     """Successful update returns the data dict and resets failure counter."""
-    coordinator, mock_client = _make_coordinator(hass)
+    coordinator, _ = _make_coordinator(hass)
     coordinator._consecutive_failures = 3  # simulate prior failures
 
     data = await coordinator._async_update_data()
@@ -93,15 +94,35 @@ async def test_async_update_data_success(hass: HomeAssistant) -> None:
     assert coordinator._consecutive_failures == 0
 
 
+async def test_async_update_data_fetches_device_id_once(hass: HomeAssistant) -> None:
+    """get_all_devices is called only on the first update."""
+    coordinator, mock_client = _make_coordinator(hass)
+
+    await coordinator._async_update_data()
+    await coordinator._async_update_data()
+
+    mock_client.get_all_devices.assert_called_once()
+    assert mock_client.get_device_state.call_count == 2
+
+
+async def test_async_update_data_no_devices(hass: HomeAssistant) -> None:
+    """UpdateFailed is raised when no devices are found."""
+    coordinator, mock_client = _make_coordinator(hass)
+    mock_client.get_all_devices.return_value = []
+
+    with pytest.raises(UpdateFailed, match="No devices found"):
+        await coordinator._async_update_data()
+
+
 # ---------------------------------------------------------------------------
 # Auth failure
 # ---------------------------------------------------------------------------
 
 
 async def test_async_update_data_auth_failure(hass: HomeAssistant) -> None:
-    """SiseliAuthError raises ConfigEntryAuthFailed."""
+    """AuthenticationError raises ConfigEntryAuthFailed."""
     coordinator, mock_client = _make_coordinator(hass)
-    mock_client.get_data.side_effect = SiseliAuthError("token expired")
+    mock_client.get_all_devices.side_effect = AuthenticationError("token expired")
 
     with pytest.raises(ConfigEntryAuthFailed):
         await coordinator._async_update_data()
@@ -113,9 +134,9 @@ async def test_async_update_data_auth_failure(hass: HomeAssistant) -> None:
 
 
 async def test_async_update_data_connection_failure(hass: HomeAssistant) -> None:
-    """SiseliConnectionError raises UpdateFailed."""
+    """NetworkError raises UpdateFailed."""
     coordinator, mock_client = _make_coordinator(hass)
-    mock_client.get_data.side_effect = SiseliConnectionError("timeout")
+    mock_client.get_all_devices.side_effect = NetworkError("timeout")
 
     with pytest.raises(UpdateFailed, match="Error communicating with Siseli API"):
         await coordinator._async_update_data()
@@ -124,7 +145,7 @@ async def test_async_update_data_connection_failure(hass: HomeAssistant) -> None
 async def test_consecutive_failures_increment(hass: HomeAssistant) -> None:
     """Consecutive failures are tracked correctly."""
     coordinator, mock_client = _make_coordinator(hass)
-    mock_client.get_data.side_effect = SiseliConnectionError("timeout")
+    mock_client.get_all_devices.side_effect = NetworkError("timeout")
 
     for expected in range(1, 4):
         with pytest.raises(UpdateFailed):
@@ -135,14 +156,13 @@ async def test_consecutive_failures_increment(hass: HomeAssistant) -> None:
 async def test_failure_counter_resets_on_success(hass: HomeAssistant) -> None:
     """Failure counter resets to 0 after a successful update."""
     coordinator, mock_client = _make_coordinator(hass)
-    mock_client.get_data.side_effect = SiseliConnectionError("timeout")
+    mock_client.get_all_devices.side_effect = NetworkError("timeout")
 
     with pytest.raises(UpdateFailed):
         await coordinator._async_update_data()
     assert coordinator._consecutive_failures == 1
 
-    mock_client.get_data.side_effect = None
-    mock_client.get_data.return_value = DEFAULT_DATA.copy()
+    mock_client.get_all_devices.side_effect = None
     data = await coordinator._async_update_data()
     assert data == DEFAULT_DATA
     assert coordinator._consecutive_failures == 0

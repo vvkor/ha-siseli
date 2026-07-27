@@ -34,16 +34,22 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         creds = entry.data
         self.client = SiseliClient(
-            username=creds[CONF_USERNAME],
+            account=creds[CONF_USERNAME],
             password=creds[CONF_PASSWORD],
         )
         self._consecutive_failures = 0
+        self._device_id: str | None = None
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from the Siseli cloud."""
         _LOGGER.debug("Fetching data from Siseli cloud")
         try:
-            data = await self.client.get_data()
+            if self._device_id is None:
+                devices = await self.client.get_all_devices()
+                if not devices:
+                    raise UpdateFailed("No devices found in Siseli account")
+                self._device_id = devices[0].id
+            state = await self.client.get_device_state(self._device_id)
         except AuthenticationError as err:
             _LOGGER.warning("Siseli authentication failed; reauthentication required")
             raise ConfigEntryAuthFailed(err) from err
@@ -70,4 +76,4 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
         self._consecutive_failures = 0
         _LOGGER.debug("Siseli data updated successfully")
-        return data
+        return {key: attr.value for key, attr in state.fields.items()}
