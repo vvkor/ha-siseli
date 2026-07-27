@@ -1,4 +1,11 @@
-"""Siseli open-platform request signing for python-siseli HTTP client."""
+"""Siseli open-platform request signing for python-siseli HTTP client.
+
+MD5 usage in this module is protocol-mandated by the upstream Siseli web client:
+- MD5(app_id) is used to derive AES key/IV for secret decryption.
+- MD5(HMAC-SHA256(...)) is used for request signature finalization.
+This integration mirrors the remote API contract and does not introduce MD5 as a
+new security primitive.
+"""
 
 from __future__ import annotations
 
@@ -113,7 +120,7 @@ def attach_open_auth(client: Any) -> None:
             "SiseliClient does not expose '_http.event_hooks'; cannot attach signing hook."
         )
 
-    if getattr(client, "__dict__", {}).get("_siseli_open_auth_attached", False):
+    if getattr(client, "_siseli_open_auth_attached", False) is True:
         return
 
     app_secret = decrypt_open_secret(SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED)

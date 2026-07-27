@@ -14,6 +14,18 @@ from custom_components.siseli.open_auth import (
 )
 
 
+class _HookHttpClient:
+    def __init__(self) -> None:
+        self.event_hooks = {"request": []}
+
+
+class _HookClient:
+    _timezone = "Europe/Moscow"
+
+    def __init__(self) -> None:
+        self._http = _HookHttpClient()
+
+
 def test_decrypt_open_secret_derives_expected_secret_from_app_id() -> None:
     """Encrypted Open secret is decrypted with AppID-derived key/IV."""
     assert (
@@ -95,17 +107,7 @@ async def test_header_generation_includes_required_iot_open_values() -> None:
     """Request hook injects required IOT-Open-* and timezone headers."""
     secret = decrypt_open_secret(SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED)
 
-    class _HttpClient:
-        def __init__(self) -> None:
-            self.event_hooks = {"request": []}
-
-    class _Client:
-        _timezone = "Europe/Moscow"
-
-        def __init__(self) -> None:
-            self._http = _HttpClient()
-
-    client = _Client()
+    client = _HookClient()
     attach_open_auth(client)
 
     request = httpx.Request(
