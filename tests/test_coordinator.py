@@ -56,8 +56,8 @@ def _make_coordinator(hass: HomeAssistant, options: dict | None = None) -> tuple
     mock_client = MagicMock()
     mock_client.get_all_devices = AsyncMock(return_value=[_Device("device-001")])
     mock_client.get_device_state = AsyncMock(return_value=_DeviceState(DEFAULT_DATA.copy()))
-    with patch("custom_components.siseli.coordinator.SiseliClient", return_value=mock_client):
-        coordinator = SiseliCoordinator(hass, entry)
+    coordinator = SiseliCoordinator(hass, entry)
+    coordinator.client = mock_client
     return coordinator, mock_client
 
 
@@ -103,6 +103,23 @@ async def test_async_update_data_fetches_device_id_once(hass: HomeAssistant) -> 
 
     mock_client.get_all_devices.assert_called_once()
     assert mock_client.get_device_state.call_count == 2
+
+
+async def test_async_update_data_creates_client_in_executor(
+    hass: HomeAssistant,
+) -> None:
+    """Client is created via executor job when missing."""
+    coordinator, mock_client = _make_coordinator(hass)
+    coordinator.client = None
+    with patch.object(
+        hass,
+        "async_add_executor_job",
+        new=AsyncMock(return_value=mock_client),
+    ) as mock_add_executor_job:
+        await coordinator._async_update_data()
+
+    mock_add_executor_job.assert_awaited_once()
+    assert coordinator.client is mock_client
 
 
 async def test_async_update_data_no_devices(hass: HomeAssistant) -> None:
