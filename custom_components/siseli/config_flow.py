@@ -49,9 +49,8 @@ def _options_schema(current_interval: int) -> vol.Schema:
 
 
 def _normalize_user_input(data: dict[str, Any]) -> dict[str, Any]:
-    """Normalize config flow user input."""
-    data[CONF_USERNAME] = data[CONF_USERNAME].strip()
-    return data
+    """Return config flow user input with a normalized username."""
+    return {**data, CONF_USERNAME: data[CONF_USERNAME].strip()}
 
 
 async def _validate_credentials(
