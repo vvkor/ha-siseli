@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -11,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.siseli.config_flow import _validate_credentials
+from custom_components.siseli.config_flow import SiseliConfigFlow, _validate_credentials
 from custom_components.siseli.const import (
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
@@ -54,8 +55,81 @@ async def test_user_step_success(hass: HomeAssistant) -> None:
     assert result["data"] == {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD}
 
 
+async def test_user_step_normalizes_username_before_validation(
+    hass: HomeAssistant,
+) -> None:
+    """Test username normalization before unique ID and validation."""
+    user_input = {
+        CONF_USERNAME: f"  {MOCK_USERNAME}  ",
+        CONF_PASSWORD: MOCK_PASSWORD,
+    }
+
+    with (
+        patch(
+            "custom_components.siseli.config_flow._validate_credentials",
+            return_value={"title": MOCK_USERNAME},
+        ) as mock_validate_credentials,
+        patch.object(
+            SiseliConfigFlow,
+            "async_set_unique_id",
+            autospec=True,
+            wraps=SiseliConfigFlow.async_set_unique_id,
+        ) as mock_set_unique_id,
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input,
+        )
+
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["title"] == MOCK_USERNAME
+    assert result["data"] == {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD}
+    mock_validate_credentials.assert_awaited_once_with(
+        hass,
+        {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+    )
+    assert mock_set_unique_id.await_args.args[1] == MOCK_USERNAME
+
+
 async def test_user_step_invalid_auth(hass: HomeAssistant) -> None:
     """Test that invalid credentials show the correct error."""
+    user_input = {
+        CONF_USERNAME: f"  {MOCK_USERNAME}  ",
+        CONF_PASSWORD: MOCK_PASSWORD,
+    }
+    with patch(
+        "custom_components.siseli.config_flow._validate_credentials",
+        side_effect=AuthenticationError("bad creds"),
+    ) as mock_validate_credentials:
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input,
+        )
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["errors"] == {"base": "invalid_auth"}
+    mock_validate_credentials.assert_awaited_once_with(
+        hass,
+        {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+    )
+
+
+async def test_user_step_invalid_auth_logs_normalized_username(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test auth failure logging uses normalized username without password."""
+    user_input = {
+        CONF_USERNAME: f"  {MOCK_USERNAME}  ",
+        CONF_PASSWORD: MOCK_PASSWORD,
+    }
+    caplog.set_level(logging.WARNING)
+
     with patch(
         "custom_components.siseli.config_flow._validate_credentials",
         side_effect=AuthenticationError("bad creds"),
@@ -63,13 +137,12 @@ async def test_user_step_invalid_auth(hass: HomeAssistant) -> None:
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
         )
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
-        )
+        await hass.config_entries.flow.async_configure(result["flow_id"], user_input)
 
     assert result["type"] == FlowResultType.FORM
-    assert result["errors"] == {"base": "invalid_auth"}
+    assert "Siseli authentication failed for username" in caplog.text
+    assert MOCK_USERNAME in caplog.text
+    assert MOCK_PASSWORD not in caplog.text
 
 
 async def test_user_step_cannot_connect(hass: HomeAssistant) -> None:
@@ -121,11 +194,15 @@ async def test_validate_credentials_creates_client_in_executor(
     ) as mock_add_executor_job:
         info = await _validate_credentials(
             hass,
-            {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+            {
+                CONF_USERNAME: f"  {MOCK_USERNAME}  ",
+                CONF_PASSWORD: MOCK_PASSWORD,
+            },
         )
 
     mock_add_executor_job.assert_awaited_once()
     mock_client.authenticate.assert_awaited_once()
+    assert mock_add_executor_job.await_args.args[0].keywords["account"] == MOCK_USERNAME
     assert info == {"title": MOCK_USERNAME}
 
 
@@ -147,7 +224,10 @@ async def test_user_step_already_configured(hass: HomeAssistant) -> None:
         )
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+            {
+                CONF_USERNAME: f"  {MOCK_USERNAME}  ",
+                CONF_PASSWORD: MOCK_PASSWORD,
+            },
         )
 
     assert result["type"] == FlowResultType.ABORT
@@ -172,7 +252,7 @@ async def test_reauth_success(hass: HomeAssistant) -> None:
         patch(
             "custom_components.siseli.config_flow._validate_credentials",
             return_value={"title": MOCK_USERNAME},
-        ),
+        ) as mock_validate_credentials,
         patch(
             "custom_components.siseli.coordinator.SiseliClient",
         ) as mock_client_class,
@@ -185,15 +265,25 @@ async def test_reauth_success(hass: HomeAssistant) -> None:
 
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: "new_password"},
+            {
+                CONF_USERNAME: f"  {MOCK_USERNAME}  ",
+                CONF_PASSWORD: "new_password",
+            },
         )
         await hass.async_block_till_done()
 
     assert result["type"] == FlowResultType.ABORT
     assert result["reason"] == "reauth_successful"
+    mock_validate_credentials.assert_awaited_once_with(
+        hass,
+        {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: "new_password"},
+    )
+    assert entry.data == {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: "new_password"}
 
 
-async def test_reauth_invalid_auth(hass: HomeAssistant) -> None:
+async def test_reauth_invalid_auth(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
     """Test that invalid credentials during reauth show the correct error."""
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -202,18 +292,31 @@ async def test_reauth_invalid_auth(hass: HomeAssistant) -> None:
     )
     entry.add_to_hass(hass)
 
+    user_input = {
+        CONF_USERNAME: f"  {MOCK_USERNAME}  ",
+        CONF_PASSWORD: MOCK_PASSWORD,
+    }
+    caplog.set_level(logging.WARNING)
+
     with patch(
         "custom_components.siseli.config_flow._validate_credentials",
         side_effect=AuthenticationError("bad"),
-    ):
+    ) as mock_validate_credentials:
         result = await entry.start_reauth_flow(hass)
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+            user_input,
         )
 
     assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {"base": "invalid_auth"}
+    mock_validate_credentials.assert_awaited_once_with(
+        hass,
+        {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+    )
+    assert "Siseli re-authentication failed for username" in caplog.text
+    assert MOCK_USERNAME in caplog.text
+    assert MOCK_PASSWORD not in caplog.text
 
 
 # ---------------------------------------------------------------------------
