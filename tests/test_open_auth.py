@@ -109,6 +109,7 @@ async def test_header_generation_includes_required_iot_open_values() -> None:
 
     client = _HookClient()
     attach_open_auth(client)
+    assert len(client._http.event_hooks["request"]) == 1
 
     request = httpx.Request(
         "POST",

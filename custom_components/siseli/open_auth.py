@@ -40,14 +40,16 @@ def _sha256_hex(raw: bytes) -> str:
 
 def _md5_hex(raw: bytes) -> str:
     # MD5 is required by the Siseli Open signing protocol (HMAC-SHA256 output -> MD5).
-    return hashlib.md5(raw).hexdigest()
+    return hashlib.md5(raw, usedforsecurity=False).hexdigest()
 
 
 @lru_cache(maxsize=4)
 def decrypt_open_secret(app_id: str, encrypted_secret: str) -> str:
     """Decrypt encrypted Siseli app secret with CryptoJS-compatible AES-CBC/ZeroPadding."""
     # MD5(app_id) key/iv derivation is required by the official web client behavior.
-    app_md5 = hashlib.md5(app_id.encode("utf-8")).hexdigest().lower()
+    app_md5 = hashlib.md5(
+        app_id.encode("utf-8"), usedforsecurity=False
+    ).hexdigest().lower()
     key = app_md5[:16].encode("utf-8")
     iv = app_md5[16:].encode("utf-8")
     cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
@@ -120,7 +122,8 @@ def attach_open_auth(client: Any) -> None:
             "SiseliClient does not expose '_http.event_hooks'; cannot attach signing hook."
         )
 
-    if getattr(client, "_siseli_open_auth_attached", False) is True:
+    is_attached = getattr(client, "_siseli_open_auth_attached", False)
+    if isinstance(is_attached, bool) and is_attached:
         return
 
     app_secret = decrypt_open_secret(SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED)
