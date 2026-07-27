@@ -16,7 +16,7 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 
-from siseli import SiseliAuthError, SiseliClient, SiseliConnectionError
+from siseli import AuthenticationError, NetworkError, SiseliClient
 
 from .const import (
     CONF_SCAN_INTERVAL,
@@ -81,9 +81,9 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
 
             try:
                 info = await _validate_credentials(self.hass, user_input)
-            except SiseliAuthError:
+            except AuthenticationError:
                 errors["base"] = "invalid_auth"
-            except SiseliConnectionError:
+            except NetworkError:
                 errors["base"] = "cannot_connect"
             except Exception:
                 _LOGGER.exception("Unexpected error during Siseli config flow")
@@ -112,9 +112,9 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             try:
                 await _validate_credentials(self.hass, user_input)
-            except SiseliAuthError:
+            except AuthenticationError:
                 errors["base"] = "invalid_auth"
-            except SiseliConnectionError:
+            except NetworkError:
                 errors["base"] = "cannot_connect"
             except Exception:
                 _LOGGER.exception("Unexpected error during Siseli reauth flow")

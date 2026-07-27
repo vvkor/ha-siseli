@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from siseli import SiseliAuthError, SiseliClient, SiseliConnectionError
+from siseli import AuthenticationError, NetworkError, SiseliClient
 
 from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
 
@@ -44,10 +44,10 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         _LOGGER.debug("Fetching data from Siseli cloud")
         try:
             data = await self.client.get_data()
-        except SiseliAuthError as err:
+        except AuthenticationError as err:
             _LOGGER.warning("Siseli authentication failed; reauthentication required")
             raise ConfigEntryAuthFailed(err) from err
-        except SiseliConnectionError as err:
+        except NetworkError as err:
             self._consecutive_failures += 1
             if self._consecutive_failures == 1:
                 _LOGGER.warning(
