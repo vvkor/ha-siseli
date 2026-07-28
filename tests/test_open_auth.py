@@ -6,8 +6,8 @@ import hashlib
 
 import httpx
 
-from custom_components.siseli.const import SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED
-from custom_components.siseli.open_auth import (
+from siseli.const import SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED
+from siseli.open_auth import (
     _sha256_hex,
     attach_open_auth,
     build_open_headers,

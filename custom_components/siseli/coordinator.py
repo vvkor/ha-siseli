@@ -15,16 +15,11 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from siseli import AuthenticationError, NetworkError, SiseliClient
+from siseli.open_auth import attach_open_auth
 
 from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
-from .open_auth import attach_open_auth
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _attach_open_auth(client: SiseliClient) -> None:
-    """Attach Siseli open-platform request signing to the SDK client."""
-    attach_open_auth(client)
 
 
 class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -62,7 +57,7 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                                 account=self._account, password=self._password,
                             )
                         )
-                        _attach_open_auth(self.client)
+                        attach_open_auth(self.client)
             if self._device_id is None:
                 devices = await self.client.get_all_devices()
                 if not devices:
