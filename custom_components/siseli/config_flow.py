@@ -18,6 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 
 from siseli import AuthenticationError, NetworkError, SiseliClient
+from siseli.open_auth import attach_open_auth
 
 from .const import (
     CONF_SCAN_INTERVAL,
@@ -64,6 +65,7 @@ async def _validate_credentials(
             account=username, password=data[CONF_PASSWORD],
         )
     )
+    attach_open_auth(client)
     await client.authenticate()
     return {"title": username}
 

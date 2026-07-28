@@ -78,6 +78,25 @@ _fake_siseli.NetworkError = _NetworkError
 _fake_siseli.SiseliClient = _SiseliClient
 sys.modules.setdefault("siseli", _fake_siseli)
 
+# The fake "siseli" above is a plain ModuleType (not a real package), so Python
+# cannot resolve sub-imports like "siseli.const" or "siseli.open_auth".
+# Import the real SDK submodules while the real package is still importable
+# (the parent entry may already be the fake, but the submodule files are on-disk)
+# and pin them directly in sys.modules so test_open_auth.py can use them.
+import importlib as _importlib
+
+for _submod in ("siseli.const", "siseli.open_auth"):
+    if _submod not in sys.modules:
+        try:
+            # Temporarily remove the fake parent so the importer sees the real package.
+            _saved = sys.modules.pop("siseli", None)
+            sys.modules[_submod] = _importlib.import_module(_submod)
+        except ImportError:
+            pass
+        finally:
+            if _saved is not None:
+                sys.modules["siseli"] = _saved
+
 # Re-export types so tests can import from this module
 AuthenticationError = _AuthenticationError
 NetworkError = _NetworkError

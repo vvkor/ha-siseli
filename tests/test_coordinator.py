@@ -122,6 +122,26 @@ async def test_async_update_data_creates_client_in_executor(
     assert coordinator.client is mock_client
 
 
+async def test_async_update_data_injects_iot_open_app_id_header(
+    hass: HomeAssistant,
+) -> None:
+    """Coordinator attaches open-auth request signing hook after client creation."""
+    coordinator, mock_client = _make_coordinator(hass)
+    coordinator.client = None
+    mock_http = MagicMock()
+    mock_http.event_hooks = {"request": []}
+    mock_client._http = mock_http
+
+    with patch.object(
+        hass,
+        "async_add_executor_job",
+        new=AsyncMock(return_value=mock_client),
+    ):
+        await coordinator._async_update_data()
+
+    assert len(mock_http.event_hooks["request"]) == 1
+
+
 async def test_async_update_data_no_devices(hass: HomeAssistant) -> None:
     """UpdateFailed is raised when no devices are found."""
     coordinator, mock_client = _make_coordinator(hass)
