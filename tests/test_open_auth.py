@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 
 import httpx
-
 from siseli.const import SISELI_APP_ID, SISELI_APP_SECRET_ENCRYPTED
 from siseli.open_auth import (
     _sha256_hex,
