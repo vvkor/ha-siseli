@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Update the pinned `python-siseli` dependency to 0.2.6, including the corrected configuration request payloads.
+
 ---
 
 ## [0.2.1] - 2026-10-12
