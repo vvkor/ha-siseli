@@ -9,17 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Update the pinned `python-siseli` dependency to 0.2.6, including the corrected configuration request payloads.
+
 ---
 
 ## [0.2.1] - 2026-10-12
 
 ### Added
 
-- Optional inverter configuration controls generated from the SDK allowlist, with writes disabled by default, configurable risk tiers, battery-voltage scaling, serialized verified writes, and a separate 15-minute refresh. Controls are exposed as switch, select and number entities and require `python-siseli` 0.2.5.
+- Optional inverter configuration controls generated from the SDK allowlist, with writes disabled by default, configurable risk tiers, battery-voltage scaling, serialized verified writes, and a separate 15-minute refresh. Controls are exposed as switch, select and number entities and require `python-siseli` 0.2.6.
 - Lifetime PV generated energy sensor (kWh, `total_increasing`) for the Home Assistant Energy dashboard, refreshed every 15 minutes instead of on every poll.
 - Sensors for readable inverter mode, load percentage, rated apparent power, heat-sink temperature, bus voltage, charging/mains/load statuses, source priorities and battery type; diagnostic ones are categorised as diagnostic. The raw `inverter_state` entity is unchanged.
 - Device registry model and firmware version from the SDK; diagnostics include device identification.
-- Pins `python-siseli==0.2.5` in the manifest and test requirements (adds `get_device_energy_totals`, extended `to_sensor_data`/`to_device_info` and the safe-write config API).
+- Pins `python-siseli==0.2.6` in the manifest and test requirements (adds `get_device_energy_totals`, extended `to_sensor_data`/`to_device_info` and the safe-write config API).
 
 ### Fixed
 
