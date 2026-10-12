@@ -11,10 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Lifetime PV generated energy sensor (kWh, 	otal_increasing) for the Home Assistant Energy dashboard, refreshed every 15 minutes instead of on every poll.
+- Lifetime PV generated energy sensor (kWh, `total_increasing`) for the Home Assistant Energy dashboard, refreshed every 15 minutes instead of on every poll.
 - Sensors for readable inverter mode, load percentage, rated apparent power, heat-sink temperature, bus voltage, charging/mains/load statuses, source priorities and battery type; diagnostic ones are categorised as diagnostic. The raw `inverter_state` entity is unchanged.
 - Device registry model and firmware version from the SDK; diagnostics include device identification.
-- **Requires a python-siseli release containing PR #18 (`get_device_energy_totals`, extended `to_sensor_data`/`to_device_info`); not yet published (latest is 0.2.2), so the manifest requirement still needs bumping before release.**
+- Requires python-siseli 0.2.3 or newer (`get_device_energy_totals`, extended `to_sensor_data`/`to_device_info`); the manifest and test requirements are bumped accordingly.
 
 ### Fixed
 
