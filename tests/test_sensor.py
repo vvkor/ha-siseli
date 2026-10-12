@@ -64,8 +64,8 @@ def test_sensor_descriptors_have_translation_keys() -> None:
 
 
 def test_sensor_descriptor_count() -> None:
-    """There should be exactly 14 sensor descriptors."""
-    assert len(SENSORS) == 14
+    """There should be exactly 13 sensors with fields confirmed by the API."""
+    assert len(SENSORS) == 13
 
 
 # ---------------------------------------------------------------------------
@@ -73,16 +73,61 @@ def test_sensor_descriptor_count() -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_native_value_returns_coordinator_data(hass: HomeAssistant) -> None:
-    """native_value returns the matching value from coordinator.data."""
+async def test_native_value_maps_api_fields_and_units(hass: HomeAssistant) -> None:
+    """Sensor values map real API fields and convert kW to W."""
     coordinator = _make_coordinator_with_data(hass)
+    expected_values = {
+        "battery_soc": 85.0,
+        "battery_voltage": 52.1,
+        "battery_current": 10.5,
+        "battery_power": 547.05,
+        "pv_voltage": 380.0,
+        "pv_current": 3.2,
+        "pv_power": 1216.0,
+        "grid_voltage": 230.0,
+        "grid_frequency": 50.0,
+        "output_voltage": 230.0,
+        "output_frequency": 50.0,
+        "load_power": 420.0,
+        "inverter_state": "B",
+    }
 
     for desc in SENSORS:
         entity = SiseliSensorEntity(coordinator, desc)
-        expected = DEFAULT_DATA.get(desc.key)
-        assert entity.native_value == expected, (
+        expected = expected_values[desc.key]
+        assert entity.native_value == pytest.approx(expected) if isinstance(expected, float) else entity.native_value == expected, (
             f"Sensor {desc.key}: expected {expected}, got {entity.native_value}"
         )
+
+
+async def test_battery_current_is_negative_when_discharging(hass: HomeAssistant) -> None:
+    """Battery current uses positive for charging and negative for discharging."""
+    data = DEFAULT_DATA.copy()
+    data["batteryChargingCurrent"] = 0
+    data["batteryDischargeCurrent"] = 4.2
+    coordinator = _make_coordinator_with_data(hass, data=data)
+
+    entity = SiseliSensorEntity(
+        coordinator, next(desc for desc in SENSORS if desc.key == "battery_current")
+    )
+    assert entity.native_value == pytest.approx(-4.2)
+
+    power = SiseliSensorEntity(
+        coordinator, next(desc for desc in SENSORS if desc.key == "battery_power")
+    )
+    assert power.native_value == pytest.approx(-52.1 * 4.2)
+
+
+async def test_derived_battery_values_return_none_when_inputs_missing(hass: HomeAssistant) -> None:
+    """Derived battery sensors do not invent values when source fields are absent."""
+    coordinator = _make_coordinator_with_data(
+        hass, data={"batteryVoltage": 12.8, "batteryChargingCurrent": 1.0}
+    )
+    for key in ("battery_current", "battery_power"):
+        entity = SiseliSensorEntity(
+            coordinator, next(desc for desc in SENSORS if desc.key == key)
+        )
+        assert entity.native_value is None
 
 
 async def test_native_value_none_when_no_data(hass: HomeAssistant) -> None:
