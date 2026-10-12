@@ -34,6 +34,10 @@ class _DeviceState:
     def __init__(self, fields: dict) -> None:
         self.fields = {k: _StateAttribute(v) for k, v in fields.items()}
 
+    def to_sensor_data(self) -> dict:
+        """Stand-in for the SDK normalized telemetry contract."""
+        return {k: attr.value for k, attr in self.fields.items()}
+
 
 class _Device:
     """Fake Device with an id."""
@@ -56,20 +60,20 @@ class _SiseliClient:
 
 
 _DEFAULT_DATA: dict = {
-    # Raw field names and units returned by the Siseli API.
-    "batteryCapacity": 85,
-    "batteryVoltage": 52.1,
-    "batteryChargingCurrent": 10.5,
-    "batteryDischargeCurrent": 0.0,
-    "pvInputVoltage1": 380.0,
-    "pv1InputCurrentForBattery": 3.2,
-    "generationPower": 1.216,  # kW
-    "gridVoltage": 230.0,
-    "gridFrequency": 50.0,
-    "acOutputVoltage": 230.0,
-    "acOutputFrequency": 50.0,
-    "acOutputActivePower": 0.420,  # kW
-    "workingMode": "B",
+    # Stable semantic fields returned by DeviceState.to_sensor_data().
+    "battery_soc": 85.0,
+    "battery_voltage": 52.1,
+    "battery_current": 10.5,
+    "battery_power": 547.05,
+    "pv_voltage": 380.0,
+    "pv_current": 3.2,
+    "pv_power": 1216.0,
+    "grid_voltage": 230.0,
+    "grid_frequency": 50.0,
+    "output_voltage": 230.0,
+    "output_frequency": 50.0,
+    "load_power": 420.0,
+    "inverter_state": "B",
 }
 
 _fake_siseli = ModuleType("siseli")
