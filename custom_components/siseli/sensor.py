@@ -12,10 +12,14 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import (
     PERCENTAGE,
+    EntityCategory,
+    UnitOfApparentPower,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
+    UnitOfEnergy,
     UnitOfFrequency,
     UnitOfPower,
+    UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -120,6 +124,63 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
         key="inverter_state",
         translation_key="inverter_state",
     ),
+    SiseliSensorEntityDescription(
+        key="inverter_mode",
+        translation_key="inverter_mode",
+    ),
+    SiseliSensorEntityDescription(
+        key="pv_generated_energy_total",
+        translation_key="pv_generated_energy_total",
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        suggested_display_precision=2,
+    ),
+    SiseliSensorEntityDescription(
+        key="load_percent",
+        translation_key="load_percent",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+    ),
+    SiseliSensorEntityDescription(
+        key="load_apparent_power",
+        translation_key="load_apparent_power",
+        device_class=SensorDeviceClass.APPARENT_POWER,
+        native_unit_of_measurement=UnitOfApparentPower.VOLT_AMPERE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    SiseliSensorEntityDescription(
+        key="heat_sink_temperature",
+        translation_key="heat_sink_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    SiseliSensorEntityDescription(
+        key="bus_voltage",
+        translation_key="bus_voltage",
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+) + tuple(
+    SiseliSensorEntityDescription(
+        key=key,
+        translation_key=key,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+    for key in (
+        "charging_status",
+        "scc_charging_status",
+        "ac_charging_status",
+        "mains_status",
+        "load_status",
+        "charger_source_priority",
+        "output_source_priority",
+        "battery_type",
+    )
 )
 
 
@@ -153,10 +214,17 @@ class SiseliSensorEntity(CoordinatorEntity[SiseliCoordinator], SensorEntity):
         self._attr_unique_id = (
             f"{coordinator.config_entry.entry_id}_{description.key}"
         )
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info, enriched with model/firmware once known."""
+        info = self.coordinator.device_info
+        return DeviceInfo(
+            identifiers={(DOMAIN, self.coordinator.config_entry.entry_id)},
             name="Siseli Inverter",
             manufacturer="Siseli",
+            model=info.get("machine_type"),
+            sw_version=info.get("firmware_version"),
         )
 
     @property

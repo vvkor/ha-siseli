@@ -71,9 +71,6 @@
       "grid_frequency": {
         "name": "Grid frequency"
       },
-      "grid_power": {
-        "name": "Grid power"
-      },
       "output_voltage": {
         "name": "Output voltage"
       },
@@ -85,6 +82,48 @@
       },
       "inverter_state": {
         "name": "Inverter state"
+      },
+      "inverter_mode": {
+        "name": "Inverter mode"
+      },
+      "pv_generated_energy_total": {
+        "name": "PV generated energy"
+      },
+      "load_percent": {
+        "name": "Load percentage"
+      },
+      "load_apparent_power": {
+        "name": "Rated apparent power"
+      },
+      "heat_sink_temperature": {
+        "name": "Heat sink temperature"
+      },
+      "bus_voltage": {
+        "name": "Bus voltage"
+      },
+      "charging_status": {
+        "name": "Charging status"
+      },
+      "scc_charging_status": {
+        "name": "Solar charger status"
+      },
+      "ac_charging_status": {
+        "name": "AC charging status"
+      },
+      "mains_status": {
+        "name": "Mains status"
+      },
+      "load_status": {
+        "name": "Load status"
+      },
+      "charger_source_priority": {
+        "name": "Charger source priority"
+      },
+      "output_source_priority": {
+        "name": "Output source priority"
+      },
+      "battery_type": {
+        "name": "Battery type"
       }
     }
   }

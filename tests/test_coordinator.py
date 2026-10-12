@@ -16,10 +16,11 @@ from custom_components.siseli.const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
 )
-from custom_components.siseli.coordinator import SiseliCoordinator
+from custom_components.siseli.coordinator import ENERGY_TOTALS_INTERVAL, SiseliCoordinator
 
 from .conftest import (
     DEFAULT_DATA,
+    DEVICE_INFO,
     MOCK_PASSWORD,
     MOCK_USERNAME,
     AuthenticationError,
@@ -56,6 +57,9 @@ def _make_coordinator(hass: HomeAssistant, options: dict | None = None) -> tuple
     mock_client = MagicMock()
     mock_client.get_all_devices = AsyncMock(return_value=[_Device("device-001")])
     mock_client.get_device_state = AsyncMock(return_value=_DeviceState(DEFAULT_DATA.copy()))
+    mock_client.get_device_energy_totals = AsyncMock(
+        return_value={"pvGeneratedEnergy": 1234.5}
+    )
     coordinator = SiseliCoordinator(hass, entry)
     coordinator.client = mock_client
     return coordinator, mock_client
@@ -203,3 +207,59 @@ async def test_failure_counter_resets_on_success(hass: HomeAssistant) -> None:
     data = await coordinator._async_update_data()
     assert data == DEFAULT_DATA
     assert coordinator._consecutive_failures == 0
+
+
+async def test_energy_totals_fetched_on_slow_schedule(hass: HomeAssistant) -> None:
+    """Lifetime totals are cached and refreshed only after ENERGY_TOTALS_INTERVAL."""
+    coordinator, mock_client = _make_coordinator(hass)
+
+    await coordinator._async_update_data()
+    await coordinator._async_update_data()
+    assert mock_client.get_device_energy_totals.call_count == 1
+    mock_client.get_device_energy_totals.assert_called_with("device-001")
+
+    coordinator._energy_totals_at -= ENERGY_TOTALS_INTERVAL
+    mock_client.get_device_energy_totals.return_value = {"pvGeneratedEnergy": 1300.0}
+    data = await coordinator._async_update_data()
+    assert mock_client.get_device_energy_totals.call_count == 2
+    assert data["pv_generated_energy_total"] == 1300.0
+
+
+async def test_energy_totals_network_error_keeps_last_value(hass: HomeAssistant) -> None:
+    """A transient totals failure does not fail the live update."""
+    coordinator, mock_client = _make_coordinator(hass)
+    await coordinator._async_update_data()
+
+    coordinator._energy_totals_at -= ENERGY_TOTALS_INTERVAL
+    mock_client.get_device_energy_totals.side_effect = NetworkError("down")
+    data = await coordinator._async_update_data()
+
+    assert data["pv_generated_energy_total"] == 1234.5
+
+
+async def test_energy_totals_auth_error_triggers_reauth(hass: HomeAssistant) -> None:
+    """Authentication errors from the totals call are not masked."""
+    coordinator, mock_client = _make_coordinator(hass)
+    mock_client.get_device_energy_totals.side_effect = AuthenticationError("bad")
+
+    with pytest.raises(ConfigEntryAuthFailed):
+        await coordinator._async_update_data()
+
+
+async def test_missing_energy_total_is_none(hass: HomeAssistant) -> None:
+    """If the API returns no PV counter the sensor value is None."""
+    coordinator, mock_client = _make_coordinator(hass)
+    mock_client.get_device_energy_totals.return_value = {}
+
+    data = await coordinator._async_update_data()
+
+    assert data["pv_generated_energy_total"] is None
+
+
+async def test_device_info_stored_from_state(hass: HomeAssistant) -> None:
+    """Device identification from the SDK is exposed on the coordinator."""
+    coordinator, _ = _make_coordinator(hass)
+
+    await coordinator._async_update_data()
+
+    assert coordinator.device_info == DEVICE_INFO
