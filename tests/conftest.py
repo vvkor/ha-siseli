@@ -346,7 +346,7 @@ class _SiseliClient:
         self.get_device_energy_totals = AsyncMock(return_value=dict(_ENERGY_TOTALS))
         self._config_values = dict(_CONFIG_DEFAULTS)
         self.get_device_config = AsyncMock(side_effect=self._get_device_config)
-        self.get_cached_device_configs = MagicMock(
+        self.get_cached_device_configs = AsyncMock(
             side_effect=self._get_cached_device_configs
         )
         self.safe_set_device_config = AsyncMock(side_effect=self._safe_set_device_config)
@@ -354,7 +354,7 @@ class _SiseliClient:
     async def _get_device_config(self, device_id: str, *, key: str):
         return _AttributeMetadata(self._config_values[key])
 
-    def _get_cached_device_configs(self, device_id: str):
+    async def _get_cached_device_configs(self, device_id: str):
         return {
             key: _AttributeMetadata(value)
             for key, value in self._config_values.items()
@@ -501,7 +501,7 @@ def mock_siseli_client():
             _CONFIG_DEFAULTS[key]
         )
     )
-    client.get_cached_device_configs = MagicMock(
+    client.get_cached_device_configs = AsyncMock(
         return_value={
             key: _AttributeMetadata(value)
             for key, value in _CONFIG_DEFAULTS.items()

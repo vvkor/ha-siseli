@@ -71,25 +71,19 @@ class SiseliConfigCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         """Refresh readable configuration values at the slower interval."""
         try:
-            fetched: dict[str, Any] = {}
-            for spec in self.specs:
-                fetched[spec.key] = await self.client.get_device_config(
-                    self.device_id, key=spec.key
-                )
-            cached = self.client.get_cached_device_configs(self.device_id)
+            cached = await self.client.get_cached_device_configs(self.device_id)
         except AuthenticationError as err:
             raise ConfigEntryAuthFailed(err) from err
         except (NetworkError, ApiError) as err:
             raise UpdateFailed(f"Could not refresh inverter configuration: {err}") from err
 
-        values = {
+        # Keys missing from the cache are omitted so their entities show no value
+        # instead of triggering a burst of individual inverter reads.
+        return {
             spec.key: config_value(cached[spec.key])
-            if spec.key in cached
-            else config_value(fetched[spec.key])
             for spec in self.specs
-            if spec.key in cached or spec.key in fetched
+            if spec.key in cached
         }
-        return values
 
     async def async_write(self, key: str, value: Any) -> None:
         """Write one configuration value without retries or optimistic updates."""

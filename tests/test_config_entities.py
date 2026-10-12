@@ -167,8 +167,25 @@ async def test_config_refresh_is_separate_slow_and_never_writes(
 
     assert coordinator.update_interval == CONFIG_REFRESH_INTERVAL
     assert data["buzzerEnabled"] == "0"
-    assert mock_siseli_client.get_device_config.await_count == 5
+    mock_siseli_client.get_cached_device_configs.assert_awaited_once()
+    mock_siseli_client.get_device_config.assert_not_awaited()
     mock_siseli_client.safe_set_device_config.assert_not_awaited()
+
+
+async def test_config_refresh_omits_keys_missing_from_cache(
+    hass: HomeAssistant, mock_siseli_client
+) -> None:
+    """Keys absent from the cache are omitted without extra remote reads."""
+    _, _, coordinator = _make_config_coordinator(hass, mock_siseli_client)
+    full = await mock_siseli_client.get_cached_device_configs("device-001")
+    full.pop("buzzerEnabled")
+    mock_siseli_client.get_cached_device_configs.side_effect = None
+    mock_siseli_client.get_cached_device_configs.return_value = full
+
+    data = await coordinator._async_update_data()
+
+    assert "buzzerEnabled" not in data
+    mock_siseli_client.get_device_config.assert_not_awaited()
 
 
 async def test_switch_write_uses_sdk_and_updates_confirmed_value(
