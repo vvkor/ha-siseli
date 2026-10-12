@@ -120,3 +120,4 @@ async def test_diagnostics_options_included(hass: HomeAssistant) -> None:
     diag = await async_get_config_entry_diagnostics(hass, entry)
 
     assert diag["entry"]["options"] == {"scan_interval": 60}
+    assert diag["configuration"]["write_access_level"] == "disabled"

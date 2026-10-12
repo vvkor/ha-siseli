@@ -34,10 +34,14 @@
       "init": {
         "title": "Siseli options",
         "data": {
-          "scan_interval": "Polling interval (seconds)"
+          "scan_interval": "Polling interval (seconds)",
+          "config_access": "Inverter configuration write access",
+          "battery_nominal_voltage": "Battery nominal voltage"
         },
         "data_description": {
-          "scan_interval": "How often to poll the Siseli cloud for new data. Minimum 10 seconds, maximum 300 seconds."
+          "scan_interval": "How often to poll the Siseli cloud for new data. Minimum 10 seconds, maximum 300 seconds.",
+          "config_access": "WARNING: configuration writes can change inverter behavior. Leave Disabled unless you understand the risks. Advanced and Critical settings can disrupt power or damage batteries.",
+          "battery_nominal_voltage": "Used to scale battery voltage settings. Choose the nominal voltage of your battery bank."
         }
       }
     }
@@ -125,6 +129,38 @@
       "battery_type": {
         "name": "Battery type"
       }
+    },
+    "switch": {
+      "buzzerEnabled": {"name": "Buzzer"},
+      "lcdBackLightControlSetting": {"name": "LCD backlight"},
+      "lcdReturnToDefaultPageSetting": {"name": "LCD return to default page"},
+      "faultCodeRecordSetting": {"name": "Fault code record"},
+      "alarmOnWhenPrimarySourceInterruptSetting": {"name": "Alarm on primary source interruption"},
+      "overTemperatureRestartSetting": {"name": "Over-temperature restart"},
+      "overLoadRestartSetting": {"name": "Overload restart"},
+      "overloadBypass": {"name": "Overload bypass"},
+      "powerSavingEnable": {"name": "Power saving"},
+      "setBatteryEqualizationEnable": {"name": "Battery equalization"}
+    },
+    "select": {
+      "settingDeviceChargerPriority": {"name": "Charger source priority"},
+      "settingDeviceGridWorkingRange": {"name": "Grid working range"},
+      "settingBatteryType": {"name": "Battery type"},
+      "setACOutputRatedVoltage": {"name": "AC output rated voltage"},
+      "settingInverterOutputRatingFrequency": {"name": "AC output rated frequency"}
+    },
+    "number": {
+      "setMaxChargingCurrent": {"name": "Maximum charging current"},
+      "setUtilityMaxChargingCurrent": {"name": "Maximum utility charging current"},
+      "setBatteryCutOffVoltage": {"name": "Battery cut-off voltage"},
+      "setBatteryRechargingVoltage": {"name": "Battery recharge voltage"},
+      "setBatteryRedischargingVoltage": {"name": "Battery re-discharge voltage"},
+      "setBatteryCVChargeVoltage": {"name": "Battery bulk (CV) voltage"},
+      "setBatteryFloatChargingVoltage": {"name": "Battery float voltage"},
+      "setBatteryEqualizationVoltage": {"name": "Battery equalization voltage"},
+      "setBatteryEqualizationTime": {"name": "Battery equalization time"},
+      "setBatteryEqualizationOverTime": {"name": "Battery equalization timeout"},
+      "setBatteryEqualizationPeriod": {"name": "Battery equalization period"}
     }
   }
 }

@@ -6,7 +6,7 @@ import logging
 from asyncio import Lock
 from datetime import datetime, timedelta
 from functools import partial
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
@@ -21,6 +21,9 @@ from siseli.open_auth import attach_open_auth
 from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from .config_coordinator import SiseliConfigCoordinator
 
 # Lifetime counters change slowly, so they are fetched far less often than live state.
 ENERGY_TOTALS_INTERVAL = timedelta(minutes=15)
@@ -49,6 +52,7 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._consecutive_failures = 0
         self._device_id: str | None = None
         self.device_info: dict[str, str | None] = {}
+        self.config_coordinator: SiseliConfigCoordinator | None = None
         self._energy_totals: dict[str, float | None] = {}
         self._energy_totals_at: datetime | None = None
 

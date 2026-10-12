@@ -21,7 +21,12 @@ from siseli import AuthenticationError, NetworkError, SiseliClient
 from siseli.open_auth import attach_open_auth
 
 from .const import (
+    BATTERY_NOMINAL_VOLTAGES,
+    CONF_BATTERY_NOMINAL_VOLTAGE,
+    CONF_CONFIG_ACCESS,
     CONF_SCAN_INTERVAL,
+    DEFAULT_BATTERY_NOMINAL_VOLTAGE,
+    DEFAULT_CONFIG_ACCESS,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MAX_SCAN_INTERVAL,
@@ -38,13 +43,28 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 )
 
 
-def _options_schema(current_interval: int) -> vol.Schema:
+def _options_schema(
+    current_interval: int,
+    current_access: str = DEFAULT_CONFIG_ACCESS,
+    current_voltage: int = DEFAULT_BATTERY_NOMINAL_VOLTAGE,
+) -> vol.Schema:
     return vol.Schema(
         {
             vol.Required(CONF_SCAN_INTERVAL, default=current_interval): vol.All(
                 vol.Coerce(int),
                 vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
             ),
+            vol.Required(CONF_CONFIG_ACCESS, default=current_access): vol.In(
+                {
+                    "disabled": "Disabled",
+                    "safe": "Safe",
+                    "advanced": "Advanced",
+                    "critical": "Critical",
+                }
+            ),
+            vol.Required(
+                CONF_BATTERY_NOMINAL_VOLTAGE, default=current_voltage
+            ): vol.In(BATTERY_NOMINAL_VOLTAGES),
         }
     )
 
@@ -172,7 +192,15 @@ class SiseliOptionsFlow(OptionsFlow):
         current_interval = self.config_entry.options.get(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
         )
+        current_access = self.config_entry.options.get(
+            CONF_CONFIG_ACCESS, DEFAULT_CONFIG_ACCESS
+        )
+        current_voltage = self.config_entry.options.get(
+            CONF_BATTERY_NOMINAL_VOLTAGE, DEFAULT_BATTERY_NOMINAL_VOLTAGE
+        )
         return self.async_show_form(
             step_id="init",
-            data_schema=_options_schema(current_interval),
+            data_schema=_options_schema(
+                current_interval, current_access, current_voltage
+            ),
         )
