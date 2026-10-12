@@ -109,8 +109,8 @@ async def test_native_value_maps_api_fields_and_units(hass: HomeAssistant) -> No
 async def test_battery_current_is_negative_when_discharging(hass: HomeAssistant) -> None:
     """Battery current uses positive for charging and negative for discharging."""
     data = DEFAULT_DATA.copy()
-    data["batteryChargingCurrent"] = 0
-    data["batteryDischargeCurrent"] = 4.2
+    data["battery_current"] = -4.2
+    data["battery_power"] = -52.1 * 4.2
     coordinator = _make_coordinator_with_data(hass, data=data)
 
     entity = SiseliSensorEntity(
@@ -127,7 +127,7 @@ async def test_battery_current_is_negative_when_discharging(hass: HomeAssistant)
 async def test_derived_battery_values_return_none_when_inputs_missing(hass: HomeAssistant) -> None:
     """Derived battery sensors do not invent values when source fields are absent."""
     coordinator = _make_coordinator_with_data(
-        hass, data={"batteryVoltage": 12.8, "batteryChargingCurrent": 1.0}
+        hass, data={"battery_voltage": 12.8}
     )
     for key in ("battery_current", "battery_power"):
         entity = SiseliSensorEntity(
