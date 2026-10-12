@@ -33,7 +33,7 @@ Built on top of [python-siseli](https://github.com/vvkor/python-siseli) — all 
 |-----------|--------------------|-------|
 | Home Assistant Core | 2024.1+ | `manifest.json` enforces the minimum supported HA version |
 | HACS | Latest stable release | Recommended installation path for upgrades and rollbacks |
-| Siseli SDK | `python-siseli>=0.1.0` | API and domain logic stay in the SDK |
+| Siseli SDK | `python-siseli==0.2.5` | Pinned in `manifest.json`; API and domain logic stay in the SDK |
 
 ---
 
@@ -72,7 +72,14 @@ power or damage equipment if set incorrectly. Enable only the risk level you
 understand and need. Select the battery bank's nominal voltage (12, 24, or 48 V)
 so battery-voltage limits are scaled correctly.
 
-Configuration controls use the safe-write API in `python-siseli` 0.2.5 or newer.
+Only settings up to the selected risk level are exposed, as switch, select and
+number entities in the *Configuration* category. Their values are refreshed
+separately from telemetry (every 15 minutes) and updated after each verified
+write; writes are serialized and use the safe-write API of `python-siseli` 0.2.5.
+If a write result cannot be confirmed, the entity keeps the last confirmed value.
+
+Output source priority is available only as a read-only sensor; it is not
+writable because the SDK does not support writing that setting.
 
 ---
 
@@ -84,6 +91,7 @@ Configuration controls use the safe-write API in `python-siseli` 0.2.5 or newer.
 | `cannot_connect` error | Network issue or Siseli cloud outage | Check internet connectivity and retry |
 | Integration shows as unavailable | Transient cloud error | It will recover automatically on next poll |
 | Re-authentication prompt | Credentials expired or changed | Follow the re-authentication flow in Notifications |
+| Configuration entities unknown/unavailable while telemetry works | The separate configuration refresh (every 15 minutes) hit a cloud API error, or the setting is absent from the cached configuration | Retries on the next refresh; telemetry is unaffected. Reload the integration to retry sooner |
 
 ---
 
