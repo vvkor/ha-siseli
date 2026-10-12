@@ -14,7 +14,7 @@ from custom_components.siseli.const import DOMAIN
 from custom_components.siseli.coordinator import SiseliCoordinator
 from custom_components.siseli.diagnostics import async_get_config_entry_diagnostics
 
-from .conftest import DEFAULT_DATA, MOCK_PASSWORD, MOCK_USERNAME
+from .conftest import DEFAULT_DATA, DEVICE_INFO, MOCK_PASSWORD, MOCK_USERNAME
 
 
 # ---------------------------------------------------------------------------
@@ -102,6 +102,16 @@ async def test_diagnostics_data_is_included(hass: HomeAssistant) -> None:
     diag = await async_get_config_entry_diagnostics(hass, entry)
 
     assert diag["data"] == DEFAULT_DATA
+
+
+async def test_diagnostics_device_info_included(hass: HomeAssistant) -> None:
+    """Coordinator device_info is included unchanged in diagnostics."""
+    entry = _make_entry_with_coordinator(hass)
+    entry.runtime_data.device_info = dict(DEVICE_INFO)
+
+    diag = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert diag["device_info"] == DEVICE_INFO
 
 
 async def test_diagnostics_options_included(hass: HomeAssistant) -> None:

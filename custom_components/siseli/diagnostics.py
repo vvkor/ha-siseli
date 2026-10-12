@@ -37,5 +37,6 @@ async def async_get_config_entry_diagnostics(
             if coordinator.update_interval
             else None,
         },
+        "device_info": coordinator.device_info,
         "data": coordinator.data,
     }

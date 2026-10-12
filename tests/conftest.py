@@ -38,6 +38,10 @@ class _DeviceState:
         """Stand-in for the SDK normalized telemetry contract."""
         return {k: attr.value for k, attr in self.fields.items()}
 
+    def to_device_info(self) -> dict:
+        """Stand-in for the SDK device identification contract."""
+        return dict(_DEVICE_INFO)
+
 
 class _Device:
     """Fake Device with an id."""
@@ -57,7 +61,18 @@ class _SiseliClient:
         self.get_device_state = AsyncMock(
             return_value=_DeviceState(_DEFAULT_DATA.copy())
         )
+        self.get_device_energy_totals = AsyncMock(return_value=dict(_ENERGY_TOTALS))
 
+
+_DEVICE_INFO: dict = {
+    "protocol": "P1",
+    "machine_type": "SLP-5K",
+    "firmware_version": "1.2.3",
+    "secondary_firmware_version": "4.5.6",
+}
+
+# Lifetime counters (kWh) keyed by the API property key.
+_ENERGY_TOTALS: dict = {"pvGeneratedEnergy": 1234.5}
 
 _DEFAULT_DATA: dict = {
     # Stable semantic fields returned by DeviceState.to_sensor_data().
@@ -74,6 +89,21 @@ _DEFAULT_DATA: dict = {
     "output_frequency": 50.0,
     "load_power": 420.0,
     "inverter_state": "B",
+    "inverter_mode": "Battery mode",
+    "load_percent": 14.0,
+    "load_apparent_power": 5000.0,
+    "heat_sink_temperature": 41.0,
+    "bus_voltage": 390.0,
+    "charging_status": "Charging",
+    "scc_charging_status": "Charging",
+    "ac_charging_status": "Not charging",
+    "mains_status": "Normal",
+    "load_status": "Connected",
+    "charger_source_priority": "Solar first",
+    "output_source_priority": "SBU",
+    "battery_type": "Lithium",
+    # Added by the coordinator from get_device_energy_totals().
+    "pv_generated_energy_total": 1234.5,
 }
 
 _fake_siseli = ModuleType("siseli")
@@ -106,6 +136,8 @@ AuthenticationError = _AuthenticationError
 NetworkError = _NetworkError
 SiseliClient = _SiseliClient
 DEFAULT_DATA = _DEFAULT_DATA
+DEVICE_INFO = _DEVICE_INFO
+ENERGY_TOTALS = _ENERGY_TOTALS
 
 
 # ---------------------------------------------------------------------------
@@ -134,6 +166,7 @@ def mock_siseli_client():
     client.authenticate = AsyncMock()
     client.get_all_devices = AsyncMock(return_value=[_Device("device-001")])
     client.get_device_state = AsyncMock(return_value=_DeviceState(_DEFAULT_DATA.copy()))
+    client.get_device_energy_totals = AsyncMock(return_value=dict(_ENERGY_TOTALS))
     return client
 
 
