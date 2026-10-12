@@ -367,7 +367,7 @@ class _SiseliClient:
         key: str,
         value,
         access: _ConfigAccess = _ConfigAccess.SAFE,
-        battery_nominal_voltage: int = 12,
+        battery_nominal_voltage: int | None = None,
         dry_run: bool = False,
     ):
         previous = self._config_values[key]
