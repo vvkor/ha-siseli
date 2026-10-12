@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -28,7 +27,6 @@ from .const import DOMAIN
 from .coordinator import SiseliCoordinator
 
 
-@dataclass(frozen=True, kw_only=True)
 class SiseliSensorEntityDescription(SensorEntityDescription):
     """Describes a Siseli sensor entity."""
 
@@ -98,13 +96,6 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfFrequency.HERTZ,
     ),
     SiseliSensorEntityDescription(
-        key="grid_power",
-        translation_key="grid_power",
-        device_class=SensorDeviceClass.POWER,
-        state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement=UnitOfPower.WATT,
-    ),
-    SiseliSensorEntityDescription(
         key="output_voltage",
         translation_key="output_voltage",
         device_class=SensorDeviceClass.VOLTAGE,
@@ -158,6 +149,7 @@ class SiseliSensorEntity(CoordinatorEntity[SiseliCoordinator], SensorEntity):
         """Initialise the sensor entity."""
         super().__init__(coordinator)
         self.entity_description = description
+        # Keep existing unique IDs stable while mapping them to the API's field names.
         self._attr_unique_id = (
             f"{coordinator.config_entry.entry_id}_{description.key}"
         )
@@ -169,7 +161,7 @@ class SiseliSensorEntity(CoordinatorEntity[SiseliCoordinator], SensorEntity):
 
     @property
     def native_value(self) -> Any:
-        """Return the sensor value from coordinator data."""
+        """Return the normalized semantic value provided by python-siseli."""
         if self.coordinator.data is None:
             return None
         return self.coordinator.data.get(self.entity_description.key)

@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Use SDK-normalized semantic telemetry for sensor entities; raw API field mapping, power unit conversion, and battery calculations are owned by `python-siseli`.
+- Convert reported kW power values to W in the SDK and ignore invalid numeric telemetry.
+- Remove the grid-power entity because no confirmed API field provides its value.
+
 ---
 
 ## [0.2.0]
