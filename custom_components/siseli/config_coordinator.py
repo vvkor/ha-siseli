@@ -116,6 +116,11 @@ class SiseliConfigCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 raise HomeAssistantError(
                     "The inverter rejected this configuration change."
                 ) from None
+            except (NetworkError, ApiError):
+                self._log_write(key, self._current_value(key), value, "communication_error")
+                raise HomeAssistantError(
+                    "Could not communicate with the inverter; the value was not changed."
+                ) from None
 
             status = result.status
             self._log_write(key, result.previous, result.requested, status.value)

@@ -39,7 +39,9 @@ from .conftest import (
     _CONFIG_SPECS,
     _ConfigAccess,
     _ConfigAccessDenied,
+    _ApiError,
     _ConfigRejected,
+    _NetworkError,
     _ConfigValidationError,
     _ConfigWriteResult,
     _ConfigWriteStatus,
@@ -303,6 +305,8 @@ async def test_unknown_write_surfaces_home_assistant_error_without_assuming_stat
         (_ConfigValidationError("sensitive validation payload"), "Invalid value"),
         (_ConfigAccessDenied("sensitive access payload"), "Writes are not enabled"),
         (_ConfigRejected(20210, "sensitive rejection payload"), "rejected this"),
+        (_NetworkError("sensitive network payload"), "Could not communicate"),
+        (_ApiError("sensitive api payload"), "Could not communicate"),
     ],
 )
 async def test_sdk_write_errors_surface_as_short_home_assistant_errors(
