@@ -95,9 +95,15 @@ async def test_native_value_maps_api_fields_and_units(hass: HomeAssistant) -> No
     for desc in SENSORS:
         entity = SiseliSensorEntity(coordinator, desc)
         expected = expected_values[desc.key]
-        assert entity.native_value == pytest.approx(expected) if isinstance(expected, float) else entity.native_value == expected, (
-            f"Sensor {desc.key}: expected {expected}, got {entity.native_value}"
-        )
+        actual = entity.native_value
+        if isinstance(expected, float):
+            assert actual == pytest.approx(expected), (
+                f"Sensor {desc.key}: expected {expected}, got {actual}"
+            )
+        else:
+            assert actual == expected, (
+                f"Sensor {desc.key}: expected {expected}, got {actual}"
+            )
 
 
 async def test_battery_current_is_negative_when_discharging(hass: HomeAssistant) -> None:
