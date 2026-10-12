@@ -56,20 +56,20 @@ class _SiseliClient:
 
 
 _DEFAULT_DATA: dict = {
-    "battery_soc": 85,
-    "battery_voltage": 52.1,
-    "battery_current": 10.5,
-    "battery_power": 547,
-    "pv_voltage": 380.0,
-    "pv_current": 3.2,
-    "pv_power": 1216,
-    "grid_voltage": 230.0,
-    "grid_frequency": 50.0,
-    "grid_power": 0,
-    "output_voltage": 230.0,
-    "output_frequency": 50.0,
-    "load_power": 420,
-    "inverter_state": "online",
+    # Raw field names and units returned by the Siseli API.
+    "batteryCapacity": 85,
+    "batteryVoltage": 52.1,
+    "batteryChargingCurrent": 10.5,
+    "batteryDischargeCurrent": 0.0,
+    "pvInputVoltage1": 380.0,
+    "pv1InputCurrentForBattery": 3.2,
+    "generationPower": 1.216,  # kW
+    "gridVoltage": 230.0,
+    "gridFrequency": 50.0,
+    "acOutputVoltage": 230.0,
+    "acOutputFrequency": 50.0,
+    "acOutputActivePower": 0.420,  # kW
+    "workingMode": "B",
 }
 
 _fake_siseli = ModuleType("siseli")
