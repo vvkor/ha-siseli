@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Optional inverter configuration controls generated from the SDK allowlist, with writes disabled by default, configurable risk tiers, battery-voltage scaling, serialized verified writes, and a separate 15-minute refresh. The controls require `python-siseli` 0.2.4 or newer.
+- Optional inverter configuration controls generated from the SDK allowlist, with writes disabled by default, configurable risk tiers, battery-voltage scaling, serialized verified writes, and a separate 15-minute refresh. The controls require `python-siseli` 0.2.5 or newer.
 - Lifetime PV generated energy sensor (kWh, `total_increasing`) for the Home Assistant Energy dashboard, refreshed every 15 minutes instead of on every poll.
 - Sensors for readable inverter mode, load percentage, rated apparent power, heat-sink temperature, bus voltage, charging/mains/load statuses, source priorities and battery type; diagnostic ones are categorised as diagnostic. The raw `inverter_state` entity is unchanged.
 - Device registry model and firmware version from the SDK; diagnostics include device identification.

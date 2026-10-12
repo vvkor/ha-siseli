@@ -108,7 +108,7 @@ async def test_disabled_access_creates_no_configuration_entities(
 
 @pytest.mark.parametrize(
     ("access", "expected_count"),
-    [("safe", 5), ("advanced", 13), ("critical", len(_CONFIG_SPECS))],
+    [("safe", 5), ("advanced", 12), ("critical", len(_CONFIG_SPECS))],
 )
 async def test_entity_set_matches_access_level(
     hass: HomeAssistant, mock_siseli_client, access: str, expected_count: int
@@ -228,7 +228,7 @@ async def test_select_write_uses_sdk_wire_value(
     _, _, coordinator = _make_config_coordinator(
         hass, mock_siseli_client, access="advanced"
     )
-    spec = _CONFIG_SPECS["settingDeviceOutputSourcePriority"]
+    spec = _CONFIG_SPECS["settingDeviceChargerPriority"]
     entity = SiseliConfigSelect(coordinator, spec)
     mock_siseli_client.safe_set_device_config.side_effect = None
     mock_siseli_client.safe_set_device_config.return_value = _ConfigWriteResult(

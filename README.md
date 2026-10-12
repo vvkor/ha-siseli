@@ -72,7 +72,7 @@ power or damage equipment if set incorrectly. Enable only the risk level you
 understand and need. Select the battery bank's nominal voltage (12, 24, or 48 V)
 so battery-voltage limits are scaled correctly.
 
-Configuration controls use the safe-write API in `python-siseli` 0.2.4 or newer.
+Configuration controls use the safe-write API in `python-siseli` 0.2.5 or newer.
 
 ---
 
@@ -98,7 +98,7 @@ Configuration controls use the safe-write API in `python-siseli` 0.2.4 or newer.
 ## Support boundaries
 
 - Supported setup path: **Settings → Devices & Services → Add Integration** using the UI config flow.
-- Supported runtime scope: `python-siseli` telemetry and optional configuration controls (SDK 0.2.4) exposed through coordinator-backed entities.
+- Supported runtime scope: `python-siseli` telemetry and optional configuration controls (SDK 0.2.5) exposed through coordinator-backed entities.
 - Unsupported scope: YAML setup, beta/nightly Home Assistant builds, and HA-side Siseli API workarounds that belong in the SDK first.
 - See [SUPPORT.md](SUPPORT.md) for issue triage expectations and [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow.
 

@@ -143,7 +143,6 @@
       "setBatteryEqualizationEnable": {"name": "Battery equalization"}
     },
     "select": {
-      "settingDeviceOutputSourcePriority": {"name": "Output source priority"},
       "settingDeviceChargerPriority": {"name": "Charger source priority"},
       "settingDeviceGridWorkingRange": {"name": "Grid working range"},
       "settingBatteryType": {"name": "Battery type"},

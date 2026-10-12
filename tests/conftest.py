@@ -132,13 +132,6 @@ _CONFIG_SPECS = {
             )
         ),
         _ConfigSpec(
-            "settingDeviceOutputSourcePriority",
-            "Output source priority",
-            _ConfigKind.ENUM,
-            _ConfigAccess.ADVANCED,
-            {"0": "Utility first", "1": "Solar first", "2": "SBU"},
-        ),
-        _ConfigSpec(
             "settingDeviceChargerPriority",
             "Charger source priority",
             _ConfigKind.ENUM,
