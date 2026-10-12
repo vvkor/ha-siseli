@@ -157,7 +157,7 @@ Initial sensor set:
 - [x] PV Power
 - [x] Grid Voltage
 - [x] Grid Frequency
-- [x] Grid Power
+- [ ] Grid Power (removed: no confirmed API field provides it)
 - [x] Output Voltage
 - [x] Output Frequency
 - [x] Load Power
@@ -255,10 +255,10 @@ Add non-MVP capabilities after stability baseline is reached.
 Features:
 
 - [ ] historical/statistical sensors
-- [ ] energy dashboard support
+- [x] energy dashboard support (lifetime PV generated energy sensor)
 - [ ] alarm sensors/history
 - [ ] binary sensors for status flags
-- [ ] firmware information entities
+- [x] firmware information (device registry model/firmware version)
 - [ ] selected services/device actions
 
 Constraints:
@@ -281,7 +281,7 @@ Carefully expose advanced controls only when safe and well-understood.
 
 Candidates:
 
-- [ ] configuration editor (subset of writable parameters)
+- [x] configuration editor (opt-in, risk-gated subset of writable parameters)
 - [ ] remote commands
 - [ ] fast reporting controls
 - [ ] passthrough-backed features from SDK
