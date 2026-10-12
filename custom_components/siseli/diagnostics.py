@@ -39,4 +39,9 @@ async def async_get_config_entry_diagnostics(
         },
         "device_info": coordinator.device_info,
         "data": coordinator.data,
+        "configuration": {
+            "write_access_level": coordinator.config_coordinator.access.name.lower()
+            if coordinator.config_coordinator
+            else "disabled",
+        },
     }

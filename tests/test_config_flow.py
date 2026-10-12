@@ -14,7 +14,12 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.siseli.config_flow import SiseliConfigFlow, _validate_credentials
 from custom_components.siseli.const import (
+    BATTERY_NOMINAL_VOLTAGES,
+    CONF_BATTERY_NOMINAL_VOLTAGE,
+    CONF_CONFIG_ACCESS,
     CONF_SCAN_INTERVAL,
+    DEFAULT_BATTERY_NOMINAL_VOLTAGE,
+    DEFAULT_CONFIG_ACCESS,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MAX_SCAN_INTERVAL,
@@ -368,6 +373,18 @@ async def test_options_flow_default(hass: HomeAssistant) -> None:
     assert result["step_id"] == "init"
     schema_keys = [str(k) for k in result["data_schema"].schema]
     assert CONF_SCAN_INTERVAL in schema_keys
+    assert CONF_CONFIG_ACCESS in schema_keys
+    assert CONF_BATTERY_NOMINAL_VOLTAGE in schema_keys
+    defaults = {
+        str(key): key.default()
+        for key in result["data_schema"].schema
+    }
+    assert defaults[CONF_CONFIG_ACCESS] == DEFAULT_CONFIG_ACCESS == "disabled"
+    assert (
+        defaults[CONF_BATTERY_NOMINAL_VOLTAGE]
+        == DEFAULT_BATTERY_NOMINAL_VOLTAGE
+        == 12
+    )
 
 
 async def test_options_flow_update_interval(hass: HomeAssistant) -> None:
@@ -384,11 +401,71 @@ async def test_options_flow_update_interval(hass: HomeAssistant) -> None:
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        user_input={CONF_SCAN_INTERVAL: new_interval},
+        user_input={
+            CONF_SCAN_INTERVAL: new_interval,
+            CONF_CONFIG_ACCESS: "advanced",
+            CONF_BATTERY_NOMINAL_VOLTAGE: 24,
+        },
     )
 
     assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert result["data"] == {CONF_SCAN_INTERVAL: new_interval}
+    assert result["data"] == {
+        CONF_SCAN_INTERVAL: new_interval,
+        CONF_CONFIG_ACCESS: "advanced",
+        CONF_BATTERY_NOMINAL_VOLTAGE: 24,
+    }
+
+
+@pytest.mark.parametrize("voltage", BATTERY_NOMINAL_VOLTAGES)
+async def test_options_flow_accepts_supported_battery_voltages(
+    hass: HomeAssistant, voltage: int
+) -> None:
+    """Battery nominal voltage is restricted to the supported bank voltages."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=MOCK_USERNAME,
+        data={CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+        options={},
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
+            CONF_CONFIG_ACCESS: "safe",
+            CONF_BATTERY_NOMINAL_VOLTAGE: voltage,
+        },
+    )
+
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_BATTERY_NOMINAL_VOLTAGE] == voltage
+
+
+def test_options_schema_restricts_risk_level_and_battery_voltage() -> None:
+    """Invalid access tiers and unsupported battery voltages are rejected."""
+    import voluptuous as vol
+
+    from custom_components.siseli.config_flow import _options_schema
+
+    schema = _options_schema(DEFAULT_SCAN_INTERVAL)
+    with pytest.raises(vol.Invalid):
+        schema(
+            {
+                CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
+                CONF_CONFIG_ACCESS: "unrestricted",
+                CONF_BATTERY_NOMINAL_VOLTAGE: 12,
+            }
+        )
+    with pytest.raises(vol.Invalid):
+        schema(
+            {
+                CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
+                CONF_CONFIG_ACCESS: "safe",
+                CONF_BATTERY_NOMINAL_VOLTAGE: 36,
+            }
+        )
 
 
 @pytest.mark.parametrize("bad_value", [MIN_SCAN_INTERVAL - 1, MAX_SCAN_INTERVAL + 1])
