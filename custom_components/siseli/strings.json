@@ -71,9 +71,6 @@
       "grid_frequency": {
         "name": "Grid frequency"
       },
-      "grid_power": {
-        "name": "Grid power"
-      },
       "output_voltage": {
         "name": "Output voltage"
       },
