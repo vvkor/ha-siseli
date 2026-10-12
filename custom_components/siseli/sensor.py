@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -28,19 +27,13 @@ from .const import DOMAIN
 from .coordinator import SiseliCoordinator
 
 
-@dataclass(frozen=True, kw_only=True)
 class SiseliSensorEntityDescription(SensorEntityDescription):
     """Describes a Siseli sensor entity."""
-
-    api_key: str | None = None
-    multiplier: float = 1.0
-    derived_value: str | None = None
 
 
 SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
     SiseliSensorEntityDescription(
         key="battery_soc",
-        api_key="batteryCapacity",
         translation_key="battery_soc",
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
@@ -48,7 +41,6 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
     ),
     SiseliSensorEntityDescription(
         key="battery_voltage",
-        api_key="batteryVoltage",
         translation_key="battery_voltage",
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -56,7 +48,6 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
     ),
     SiseliSensorEntityDescription(
         key="battery_current",
-        derived_value="battery_current",
         translation_key="battery_current",
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
@@ -64,7 +55,6 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
     ),
     SiseliSensorEntityDescription(
         key="battery_power",
-        derived_value="battery_power",
         translation_key="battery_power",
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
@@ -72,7 +62,6 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
     ),
     SiseliSensorEntityDescription(
         key="pv_voltage",
-        api_key="pvInputVoltage1",
         translation_key="pv_voltage",
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -80,7 +69,6 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
     ),
     SiseliSensorEntityDescription(
         key="pv_current",
-        api_key="pv1InputCurrentForBattery",
         translation_key="pv_current",
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
@@ -88,8 +76,6 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
     ),
     SiseliSensorEntityDescription(
         key="pv_power",
-        api_key="generationPower",
-        multiplier=1000,
         translation_key="pv_power",
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
@@ -97,7 +83,6 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
     ),
     SiseliSensorEntityDescription(
         key="grid_voltage",
-        api_key="gridVoltage",
         translation_key="grid_voltage",
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -105,7 +90,6 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
     ),
     SiseliSensorEntityDescription(
         key="grid_frequency",
-        api_key="gridFrequency",
         translation_key="grid_frequency",
         device_class=SensorDeviceClass.FREQUENCY,
         state_class=SensorStateClass.MEASUREMENT,
@@ -113,7 +97,6 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
     ),
     SiseliSensorEntityDescription(
         key="output_voltage",
-        api_key="acOutputVoltage",
         translation_key="output_voltage",
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -121,7 +104,6 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
     ),
     SiseliSensorEntityDescription(
         key="output_frequency",
-        api_key="acOutputFrequency",
         translation_key="output_frequency",
         device_class=SensorDeviceClass.FREQUENCY,
         state_class=SensorStateClass.MEASUREMENT,
@@ -129,8 +111,6 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
     ),
     SiseliSensorEntityDescription(
         key="load_power",
-        api_key="acOutputActivePower",
-        multiplier=1000,
         translation_key="load_power",
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
@@ -138,7 +118,6 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
     ),
     SiseliSensorEntityDescription(
         key="inverter_state",
-        api_key="workingMode",
         translation_key="inverter_state",
     ),
 )
@@ -182,44 +161,7 @@ class SiseliSensorEntity(CoordinatorEntity[SiseliCoordinator], SensorEntity):
 
     @property
     def native_value(self) -> Any:
-        """Return a mapped or derived value from coordinator data."""
-        data = self.coordinator.data
-        if data is None:
+        """Return the normalized semantic value provided by python-siseli."""
+        if self.coordinator.data is None:
             return None
-
-        description = self.entity_description
-        if description.derived_value == "battery_current":
-            charging = _number(data.get("batteryChargingCurrent"))
-            discharging = _number(data.get("batteryDischargeCurrent"))
-            if charging is None or discharging is None:
-                return None
-            # Positive means charging; negative means discharging.
-            return charging - discharging
-
-        if description.derived_value == "battery_power":
-            voltage = _number(data.get("batteryVoltage"))
-            charging = _number(data.get("batteryChargingCurrent"))
-            discharging = _number(data.get("batteryDischargeCurrent"))
-            if voltage is None or charging is None or discharging is None:
-                return None
-            return voltage * (charging - discharging)
-
-        if description.api_key is None:
-            return None
-        value = data.get(description.api_key)
-        if value is None:
-            return None
-        number = _number(value)
-        if number is not None:
-            return number * description.multiplier
-        return value
-
-
-def _number(value: Any) -> float | None:
-    """Convert a numeric API value to float, preserving missing values."""
-    if value is None or isinstance(value, bool):
-        return None
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
+        return self.coordinator.data.get(self.entity_description.key)
