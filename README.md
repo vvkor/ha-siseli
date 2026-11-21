@@ -31,7 +31,7 @@ Built on top of [python-siseli](https://github.com/vvkor/python-siseli) — all 
 
 | Component | Supported versions | Notes |
 |-----------|--------------------|-------|
-| Home Assistant Core | 2024.11+ | `manifest.json` enforces the minimum supported HA version |
+| Home Assistant Core | 2024.11+ | `hacs.json` sets the minimum supported HA version for HACS |
 | HACS | Latest stable release | Recommended installation path for upgrades and rollbacks |
 | Siseli SDK | `python-siseli==0.2.6` | Pinned in `manifest.json`; API and domain logic stay in the SDK |
 

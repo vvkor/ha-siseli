@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -21,6 +22,7 @@ from custom_components.siseli.config_coordinator import (
     CONFIG_RETRY_INTERVAL,
     SiseliConfigCoordinator,
 )
+from custom_components.siseli.config_entity import translation_key_for
 from custom_components.siseli.const import (
     CONF_BATTERY_NOMINAL_VOLTAGE,
     CONF_CONFIG_ACCESS,
@@ -141,18 +143,19 @@ def test_configuration_translations_match_sdk_specs() -> None:
     """Every SDK setting has a platform translation in both English files."""
     base = Path(__file__).parents[1] / "custom_components" / "siseli"
     switches = {
-        key
+        translation_key_for(key)
         for key, spec in _CONFIG_SPECS.items()
         if spec.kind.value == "enum"
         and spec.options == {"0": "Disable", "1": "Enable"}
     }
     selects = {
-        key
+        translation_key_for(key)
         for key, spec in _CONFIG_SPECS.items()
-        if spec.kind.value == "enum" and key not in switches
+        if spec.kind.value == "enum"
+        and spec.options != {"0": "Disable", "1": "Enable"}
     }
     numbers = {
-        key for key, spec in _CONFIG_SPECS.items() if spec.kind.value == "number"
+        translation_key_for(key) for key, spec in _CONFIG_SPECS.items() if spec.kind.value == "number"
     }
 
     for filename in ("strings.json", "translations/en.json"):
@@ -399,3 +402,13 @@ async def test_writes_are_serialized_per_entry(
     )
 
     assert max_active_writes == 1
+
+
+def test_translation_keys_are_valid_for_home_assistant() -> None:
+    """Hassfest only accepts lowercase translation keys (no camelCase)."""
+    keys = {translation_key_for(key) for key in _CONFIG_SPECS}
+
+    assert len(keys) == len(_CONFIG_SPECS)
+    assert all(re.fullmatch(r"[a-z0-9_-]+", key) for key in keys)
+    assert translation_key_for("setBatteryCVChargeVoltage") == "set_battery_cv_charge_voltage"
+    assert translation_key_for("overloadBypass") == "overload_bypass"

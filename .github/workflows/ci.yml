@@ -59,3 +59,5 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          # Brand assets are not provided yet.
+          ignore: brands

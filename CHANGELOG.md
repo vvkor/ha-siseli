@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A cloud API error while reading lifetime energy counters no longer fails the whole telemetry update.
 - Diagnostics no longer include the account name (the config entry title).
 - Re-authentication can no longer re-point an entry to a different Siseli account.
-- The minimum Home Assistant version is now 2024.11, which the code already required (`ConfigFlowResult`, `data_updates` in reauth).
+- Translation keys of configuration entities are now lowercase snake_case, as hassfest requires (entity IDs and unique IDs are unchanged).
+- The minimum Home Assistant version is now 2024.11 (set in `hacs.json`), which the code already required (`ConfigFlowResult`, `data_updates` in reauth).
 
 ### Added
 
