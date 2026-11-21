@@ -17,8 +17,7 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 
-from siseli import AuthenticationError, NetworkError, SiseliClient
-from siseli.open_auth import attach_open_auth
+from siseli import AuthenticationError, InvalidResponseError, NetworkError, SiseliClient
 
 from .const import (
     BATTERY_NOMINAL_VOLTAGES,
@@ -82,10 +81,11 @@ async def _validate_credentials(
     client = await hass.async_add_executor_job(
         partial(
             SiseliClient,
-            account=username, password=data[CONF_PASSWORD],
+            account=username,
+            password=data[CONF_PASSWORD],
+            open_auth=True,
         )
     )
-    attach_open_auth(client)
     await client.authenticate()
     return {"title": username}
 
@@ -122,7 +122,7 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
                     err,
                 )
                 errors["base"] = "invalid_auth"
-            except NetworkError:
+            except (NetworkError, InvalidResponseError):
                 errors["base"] = "cannot_connect"
             except Exception:
                 _LOGGER.exception("Unexpected error during Siseli config flow")
@@ -189,7 +189,7 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
                     err,
                 )
                 errors["base"] = "invalid_auth"
-            except NetworkError:
+            except (NetworkError, InvalidResponseError):
                 errors["base"] = "cannot_connect"
             except Exception:
                 _LOGGER.exception("Unexpected error during Siseli %s flow", step_id)

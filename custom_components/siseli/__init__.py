@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 
 from .config_coordinator import SiseliConfigCoordinator
 from .const import (
@@ -26,8 +27,27 @@ PLATFORMS: list[Platform] = [
 ]
 
 
+# python-siseli 0.3.0 deprecates the ``load_apparent_power`` telemetry key (it is the
+# *rated* value) in favour of ``rated_apparent_power``.
+_RENAMED_SENSOR_KEYS = {"load_apparent_power": "rated_apparent_power"}
+
+
+@callback
+def _async_migrate_unique_id(
+    entry: ConfigEntry, entity_entry: er.RegistryEntry
+) -> dict[str, str] | None:
+    """Move entities from deprecated telemetry keys to their replacements."""
+    for old, new in _RENAMED_SENSOR_KEYS.items():
+        if entity_entry.unique_id == f"{entry.entry_id}_{old}":
+            return {"new_unique_id": f"{entry.entry_id}_{new}"}
+    return None
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: SiseliConfigEntry) -> bool:
     """Set up Siseli from a config entry."""
+    await er.async_migrate_entries(
+        hass, entry.entry_id, lambda entity_entry: _async_migrate_unique_id(entry, entity_entry)
+    )
     coordinator = SiseliCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
     access = entry.options.get(CONF_CONFIG_ACCESS, DEFAULT_CONFIG_ACCESS)

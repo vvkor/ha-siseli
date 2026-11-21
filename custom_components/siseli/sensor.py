@@ -143,8 +143,8 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
     ),
     SiseliSensorEntityDescription(
-        key="load_apparent_power",
-        translation_key="load_apparent_power",
+        key="rated_apparent_power",
+        translation_key="rated_apparent_power",
         device_class=SensorDeviceClass.APPARENT_POWER,
         native_unit_of_measurement=UnitOfApparentPower.VOLT_AMPERE,
         entity_category=EntityCategory.DIAGNOSTIC,

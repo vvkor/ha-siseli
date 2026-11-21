@@ -31,6 +31,8 @@ from .conftest import (
     MOCK_USERNAME,
     AuthenticationError,
     NetworkError,
+    _InvalidResponseError,
+    _RateLimitError,
 )
 
 # ---------------------------------------------------------------------------
@@ -216,27 +218,60 @@ async def test_validate_credentials_creates_client_in_executor(
     assert info == {"title": MOCK_USERNAME}
 
 
-async def test_validate_credentials_injects_iot_open_app_id_header(
+async def test_validate_credentials_enables_open_auth_signing(
     hass: HomeAssistant,
 ) -> None:
-    """validate_credentials attaches open-auth request signing hook."""
-    mock_http = MagicMock()
-    mock_http.event_hooks = {"request": []}
+    """Credentials are validated with an Open API signing client."""
     mock_client = AsyncMock()
-    mock_client.authenticate = AsyncMock()
-    mock_client._http = mock_http
 
-    with patch.object(
-        hass,
-        "async_add_executor_job",
-        new=AsyncMock(return_value=mock_client),
-    ):
+    with patch(
+        "custom_components.siseli.config_flow.SiseliClient", return_value=mock_client
+    ) as client_class:
         await _validate_credentials(
             hass,
             {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
         )
 
-    assert len(mock_http.event_hooks["request"]) == 1
+    client_class.assert_called_once_with(
+        account=MOCK_USERNAME, password=MOCK_PASSWORD, open_auth=True
+    )
+    mock_client.authenticate.assert_awaited_once()
+
+
+async def test_user_step_throttled_shows_cannot_connect(hass: HomeAssistant) -> None:
+    """A throttled login (HTTP 429) is a connection error, not bad credentials."""
+    with patch(
+        "custom_components.siseli.config_flow._validate_credentials",
+        side_effect=_RateLimitError("429"),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+        )
+
+    assert result["errors"] == {"base": "cannot_connect"}
+
+
+async def test_user_step_invalid_response_shows_cannot_connect(
+    hass: HomeAssistant,
+) -> None:
+    """A malformed cloud response is reported as a connection problem."""
+    with patch(
+        "custom_components.siseli.config_flow._validate_credentials",
+        side_effect=_InvalidResponseError("not json"),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+        )
+
+    assert result["errors"] == {"base": "cannot_connect"}
 
 
 async def test_user_step_already_configured(hass: HomeAssistant) -> None:

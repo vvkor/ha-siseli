@@ -21,6 +21,7 @@ from siseli import (
     ConfigRejected,
     ConfigValidationError,
     ConfigWriteStatus,
+    InvalidResponseError,
     NetworkError,
     config_value,
 )
@@ -32,6 +33,13 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_REFRESH_INTERVAL = timedelta(minutes=15)
 # Used while the last refresh failed or returned nothing, so entities recover quickly.
 CONFIG_RETRY_INTERVAL = timedelta(minutes=1)
+
+_VALIDATION_ERROR_MESSAGE = "Invalid value for inverter setting."
+_BATTERY_HINT = (
+    " Battery voltage settings are also checked against the live battery voltage:"
+    " make sure the inverter is online and the battery nominal voltage in the"
+    " integration options matches your battery."
+)
 
 _ACCESS_BY_NAME = {
     "safe": ConfigAccess.SAFE,
@@ -87,7 +95,7 @@ class SiseliConfigCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             cached = await self.client.get_cached_device_configs(self.device_id)
         except AuthenticationError as err:
             raise ConfigEntryAuthFailed(err) from err
-        except (NetworkError, ApiError) as err:
+        except (NetworkError, ApiError, InvalidResponseError) as err:
             raise UpdateFailed(f"Could not refresh inverter configuration: {err}") from err
 
         # Keys missing from the cache are omitted so their entities show no value
@@ -116,9 +124,7 @@ class SiseliConfigCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 raise ConfigEntryAuthFailed(err) from err
             except ConfigValidationError:
                 self._log_write(key, self._current_value(key), value, "validation_error")
-                raise HomeAssistantError(
-                    "Invalid value for inverter setting."
-                ) from None
+                raise HomeAssistantError(self._validation_message(key)) from None
             except ConfigAccessDenied:
                 self._log_write(key, self._current_value(key), value, "access_denied")
                 raise HomeAssistantError(
@@ -129,7 +135,7 @@ class SiseliConfigCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 raise HomeAssistantError(
                     "The inverter rejected this configuration change."
                 ) from None
-            except (NetworkError, ApiError):
+            except (NetworkError, ApiError, InvalidResponseError):
                 self._log_write(key, self._current_value(key), value, "communication_error")
                 raise HomeAssistantError(
                     "Could not communicate with the inverter; the value was not changed."
@@ -148,6 +154,13 @@ class SiseliConfigCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             updated = dict(self.data or {})
             updated[key] = result.current
             self.async_set_updated_data(updated)
+
+    def _validation_message(self, key: str) -> str:
+        """Return a short validation error, hinting at the battery cross-check."""
+        spec = next((spec for spec in self.specs if spec.key == key), None)
+        if spec is not None and spec.scales_with_battery:
+            return _VALIDATION_ERROR_MESSAGE + _BATTERY_HINT
+        return _VALIDATION_ERROR_MESSAGE
 
     def _current_value(self, key: str) -> Any:
         """Return the last confirmed value for write logging."""

@@ -15,8 +15,13 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from siseli import ApiError, AuthenticationError, NetworkError, SiseliClient
-from siseli.open_auth import attach_open_auth
+from siseli import (
+    ApiError,
+    AuthenticationError,
+    InvalidResponseError,
+    NetworkError,
+    SiseliClient,
+)
 
 from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
 
@@ -76,10 +81,11 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         self.client = await self.hass.async_add_executor_job(
                             partial(
                                 SiseliClient,
-                                account=self._account, password=self._password,
+                                account=self._account,
+                                password=self._password,
+                                open_auth=True,
                             )
                         )
-                        attach_open_auth(self.client)
             if self._device_id is None:
                 devices = await self.client.get_all_devices()
                 if not devices:
@@ -96,8 +102,9 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except AuthenticationError as err:
             _LOGGER.warning("Siseli authentication failed; reauthentication required")
             raise ConfigEntryAuthFailed(err) from err
-        except (NetworkError, ApiError) as err:
-            # ApiError covers cloud-side conditions such as "Device is offline" (71000).
+        except (NetworkError, ApiError, InvalidResponseError) as err:
+            # ApiError covers cloud-side conditions such as "Device is offline" (71000);
+            # NetworkError includes HTTP 429 throttling (RateLimitError).
             self._consecutive_failures += 1
             if self._consecutive_failures == 1:
                 _LOGGER.warning(
@@ -149,5 +156,5 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._energy_totals = await self.client.get_device_energy_totals(
                 self._device_id
             )
-        except (NetworkError, ApiError) as err:
+        except (NetworkError, ApiError, InvalidResponseError) as err:
             _LOGGER.warning("Could not refresh Siseli lifetime energy totals: %s", err)

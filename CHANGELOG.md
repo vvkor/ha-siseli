@@ -11,6 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.1] - 2026-11-21
+
+### Changed
+
+- Update the pinned `python-siseli` dependency to 0.3.0. The integration is compatible with its breaking changes (it uses no datetimes from the API and treats `RateLimitError` as a normal retryable failure).
+- Create the SDK client with `open_auth=True` instead of attaching the request-signing hook manually.
+- Malformed cloud responses (`InvalidResponseError`) are handled as regular update failures, and as a connection error in the config flow.
+- The "Rated apparent power" sensor now uses the SDK's `rated_apparent_power` key instead of the deprecated `load_apparent_power` alias. Existing entities are migrated automatically and keep their entity ID and history.
+- Battery voltage settings are cross-checked against the live battery voltage by the SDK; a rejected write now tells the user to check that the inverter is online and that the battery nominal voltage option matches.
+
+### Added
+
+- Contract tests that run against the real `python-siseli` package and verify imports, client API, telemetry keys, configuration specs and translations, so SDK changes are caught in CI.
+
+---
+
 ## [0.3.0] - 2026-11-21
 
 ### Fixed

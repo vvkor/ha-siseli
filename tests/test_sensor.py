@@ -87,14 +87,14 @@ def test_inverter_state_entity_key_is_stable() -> None:
 
 def test_rated_apparent_power_is_not_labelled_as_live_load() -> None:
     """ratedApparentPower is a rating, so it must not look like live apparent power."""
-    desc = next(d for d in SENSORS if d.key == "load_apparent_power")
+    desc = next(d for d in SENSORS if d.key == "rated_apparent_power")
     assert desc.entity_category == EntityCategory.DIAGNOSTIC
     translations = json.loads(
         (Path(__file__).parents[1] / "custom_components/siseli/strings.json").read_text(
             encoding="utf-8"
         )
     )
-    assert "Rated" in translations["entity"]["sensor"]["load_apparent_power"]["name"]
+    assert "Rated" in translations["entity"]["sensor"]["rated_apparent_power"]["name"]
 
 
 def test_translations_match_descriptors() -> None:
