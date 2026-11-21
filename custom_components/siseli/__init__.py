@@ -25,6 +25,7 @@ _LOGGER = logging.getLogger(__name__)
 type SiseliConfigEntry = ConfigEntry[SiseliCoordinator]
 
 PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
     Platform.SENSOR,
     Platform.SWITCH,
     Platform.SELECT,

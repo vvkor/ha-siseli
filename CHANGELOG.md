@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-11-21
+
+### Added
+
+- **Online** binary sensor (connectivity) showing whether the inverter is reporting to the Siseli cloud, with `last_online` and `last_data_received` attributes. It reads off for a definite offline state and is unavailable only when the cloud itself cannot be reached.
+- **Last data received** diagnostic timestamp sensor with the time of the newest telemetry snapshot; it keeps its last value while the inverter is offline.
+
+### Fixed
+
+- Telemetry sensors and configuration controls no longer keep showing old values (for example the load) after the inverter is switched off. The cloud keeps serving the last snapshot for a while before flagging the device offline, so the inverter is now treated as offline when the cloud flags it or when no new report has arrived for 10 minutes (it reports about every 5 minutes). Everything becomes unavailable meanwhile and recovers on the next poll after the inverter reports again, refreshing the configuration controls immediately.
+- The device record is read each poll (one extra lightweight request); a failure of that request never fails the telemetry update.
+
+---
+
 ## [0.3.3] - 2026-11-21
 
 ### Fixed

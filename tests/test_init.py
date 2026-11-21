@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from unittest.mock import patch
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
@@ -37,16 +36,6 @@ def _entry(options: dict | None = None) -> MockConfigEntry:
         data={CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
         options=options or {},
     )
-
-
-@pytest.fixture
-def patched_client(mock_siseli_client):
-    """Make the coordinator use the mocked SDK client."""
-    with patch(
-        "custom_components.siseli.coordinator.SiseliClient",
-        return_value=mock_siseli_client,
-    ):
-        yield mock_siseli_client
 
 
 async def test_setup_without_configuration_access(
@@ -148,7 +137,7 @@ async def test_setup_succeeds_while_inverter_is_offline(
     hass: HomeAssistant, patched_client
 ) -> None:
     """An offline inverter must not put the entry into Home Assistant's slow retry."""
-    patched_client.get_device_state.side_effect = _ApiError("API error 71000: Device is offline")
+    patched_client.get_device_state.side_effect = _ApiError("API error 71000: Device is offline", code=71000)
     entry = _entry()
     entry.add_to_hass(hass)
 
@@ -163,9 +152,9 @@ async def test_entities_recover_on_the_next_poll_after_offline_setup(
     hass: HomeAssistant, patched_client, caplog: pytest.LogCaptureFixture
 ) -> None:
     """Sensors, controls and device details recover within one polling interval."""
-    patched_client.get_device_state.side_effect = _ApiError("API error 71000: Device is offline")
+    patched_client.get_device_state.side_effect = _ApiError("API error 71000: Device is offline", code=71000)
     patched_client.get_cached_device_configs.side_effect = _ApiError(
-        "API error 71000: Device is offline"
+        "API error 71000: Device is offline", code=71000
     )
     entry = _entry({CONF_CONFIG_ACCESS: "safe"})
     entry.add_to_hass(hass)
@@ -209,7 +198,7 @@ async def test_registry_model_is_not_erased_while_offline(
     await hass.async_block_till_done()
     await hass.config_entries.async_unload(entry.entry_id)
 
-    patched_client.get_device_state.side_effect = _ApiError("API error 71000: Device is offline")
+    patched_client.get_device_state.side_effect = _ApiError("API error 71000: Device is offline", code=71000)
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 

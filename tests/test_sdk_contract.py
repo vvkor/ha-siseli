@@ -17,12 +17,14 @@ from pathlib import Path
 import pytest
 
 from custom_components.siseli.config_entity import translation_key_for
+from custom_components.siseli.const import OFFLINE_API_CODE
 from custom_components.siseli.sensor import SENSORS
 
 ROOT = Path(__file__).parents[1]
 COMPONENT = ROOT / "custom_components" / "siseli"
 
 _PROBE = r"""
+import dataclasses
 import importlib.metadata as metadata
 import inspect
 import json
@@ -51,6 +53,9 @@ payload = {
         }
         for spec in siseli.CONFIG_SPECS.values()
     ],
+    "state_has_time": "time" in {f.name for f in dataclasses.fields(state.DeviceState)},
+    "device_fields": sorted(f.name for f in dataclasses.fields(siseli.Device)),
+    "api_error_code": siseli.ApiError(71000, "Device is offline").code,
     "access_names": sorted(m.lower() for m in siseli.ConfigAccess.__members__),
     "write_statuses": sorted(s.value for s in siseli.ConfigWriteStatus),
     "rate_limit_is_network": issubclass(siseli.RateLimitError, siseli.NetworkError),
@@ -111,6 +116,7 @@ def test_client_api_used_by_the_integration_exists(sdk: dict) -> None:
     assert {
         "authenticate",
         "get_all_devices",
+        "get_device",
         "get_device_state",
         "get_device_energy_totals",
         "get_cached_device_configs",
@@ -132,7 +138,7 @@ def test_exception_hierarchy_keeps_throttling_out_of_reauth(sdk: dict) -> None:
 
 def test_every_sensor_is_provided_by_the_sdk(sdk: dict) -> None:
     """Each sensor key is a real telemetry key (or added by the coordinator)."""
-    coordinator_keys = {"pv_generated_energy_total"}
+    coordinator_keys = {"pv_generated_energy_total", "last_data_received"}
     keys = {description.key for description in SENSORS}
 
     assert keys - coordinator_keys <= set(sdk["sensor_keys"])
@@ -176,3 +182,10 @@ def test_real_config_specs_are_fully_supported(sdk: dict) -> None:
         seen.add(key)
 
     assert len(seen) == len(sdk["specs"])
+
+
+def test_connectivity_data_used_for_the_online_indicator_exists(sdk: dict) -> None:
+    """The online indicator relies on the snapshot time, the device flags and code 71000."""
+    assert sdk["state_has_time"]
+    assert {"is_online", "last_online_at", "raw"} <= set(sdk["device_fields"])
+    assert sdk["api_error_code"] == OFFLINE_API_CODE

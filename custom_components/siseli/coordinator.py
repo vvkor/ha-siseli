@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from asyncio import Lock
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
@@ -24,12 +24,25 @@ from siseli import (
     SiseliClient,
 )
 
-from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import (
+    CONF_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+    OFFLINE_API_CODE,
+    STALE_AFTER,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .config_coordinator import SiseliConfigCoordinator
+
+def _aware(value: datetime | None) -> datetime | None:
+    """Treat naive API timestamps as UTC, like the SDK does."""
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value
+
 
 # Lifetime counters change slowly, so they are fetched far less often than live state.
 ENERGY_TOTALS_INTERVAL = timedelta(minutes=15)
@@ -59,6 +72,10 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._device_id: str | None = None
         self.device_info: dict[str, str | None] = {}
         self.config_coordinator: SiseliConfigCoordinator | None = None
+        # True/False once the inverter's connectivity is known, None when unknown
+        # (for example while the cloud itself cannot be reached).
+        self.device_online: bool | None = None
+        self.last_online_at: datetime | None = None
         self._energy_totals: dict[str, float | None] = {}
         self._energy_totals_at: datetime | None = None
 
@@ -99,6 +116,7 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     )
                 self._device_id = devices[0].id
             state = await self.client.get_device_state(self._device_id)
+            device = await self._async_get_device()
             await self._async_refresh_energy_totals()
         except AuthenticationError as err:
             _LOGGER.warning("Siseli authentication failed; reauthentication required")
@@ -107,6 +125,10 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # ApiError covers cloud-side conditions such as "Device is offline" (71000);
             # NetworkError includes HTTP 429 throttling (RateLimitError).
             self._consecutive_failures += 1
+            # "Device is offline" means the cloud is fine and only the inverter is
+            # gone; anything else leaves its connectivity unknown.
+            offline = isinstance(err, ApiError) and err.code == OFFLINE_API_CODE
+            self._set_online(False if offline else None)
             if self._consecutive_failures == 1:
                 _LOGGER.warning(
                     "Error communicating with Siseli API (attempt %d): %s",
@@ -121,17 +143,20 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 )
             raise UpdateFailed(f"Error communicating with Siseli API: {err}") from err
 
+        recovering = self._consecutive_failures > 0 or self.device_online is False
         if self._consecutive_failures > 0:
             _LOGGER.info(
                 "Siseli API connection restored after %d consecutive failure(s)",
                 self._consecutive_failures,
             )
+        online = self._is_online(state, device)
+        self._set_online(online)
+        if device is not None:
+            self.last_online_at = device.last_online_at
+        if online and recovering and self.config_coordinator is not None:
             # Configuration is refreshed on a slow timer; do not make its entities
             # wait for it after the inverter comes back.
-            if self.config_coordinator is not None:
-                self.hass.async_create_task(
-                    self.config_coordinator.async_request_refresh()
-                )
+            self.hass.async_create_task(self.config_coordinator.async_request_refresh())
         self._consecutive_failures = 0
         _LOGGER.debug("Siseli data updated successfully")
         # The SDK owns API field mapping, unit conversion, and derived telemetry.
@@ -141,7 +166,40 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         data["pv_generated_energy_total"] = self._energy_totals.get(
             PV_GENERATED_ENERGY_KEY
         )
+        data["last_data_received"] = _aware(state.time)
         return data
+
+    async def _async_get_device(self) -> Any:
+        """Return the cloud's device record, or None if it cannot be read."""
+        try:
+            return await self.client.get_device(self._device_id)
+        except (NetworkError, ApiError, InvalidResponseError) as err:
+            # The telemetry request already succeeded; the flag is only a hint.
+            _LOGGER.debug("Could not read the Siseli device status: %s", err)
+            return None
+
+    @staticmethod
+    def _is_online(state: Any, device: Any) -> bool:
+        """Combine the cloud's online flag with the age of the newest telemetry."""
+        snapshot = _aware(state.time)
+        if snapshot is not None and dt_util.utcnow() - snapshot > STALE_AFTER:
+            return False
+        # The SDK defaults a missing flag to False, so trust it only when present.
+        raw = getattr(device, "raw", None) or {}
+        return not (device is not None and "isOnline" in raw and not device.is_online)
+
+    def _set_online(self, online: bool | None) -> None:
+        """Record connectivity and refresh the configuration entities on change."""
+        if online == self.device_online:
+            return
+        if online is False:
+            _LOGGER.warning("Siseli inverter is offline")
+        elif online and self.device_online is False:
+            _LOGGER.info("Siseli inverter is back online")
+        self.device_online = online
+        if self.config_coordinator is not None:
+            # Configuration entities depend on connectivity for their availability.
+            self.config_coordinator.async_update_listeners()
 
     def _async_sync_device_registry(self) -> None:
         """Fill in model/firmware when they only become known after entity setup."""

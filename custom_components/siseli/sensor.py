@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -31,8 +32,12 @@ from .coordinator import SiseliCoordinator
 from .device import build_device_info
 
 
+@dataclass(frozen=True, kw_only=True)
 class SiseliSensorEntityDescription(SensorEntityDescription):
     """Describes a Siseli sensor entity."""
+
+    # Keep showing the last known value while the inverter is offline.
+    available_offline: bool = False
 
 
 SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
@@ -137,6 +142,13 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
         suggested_display_precision=2,
     ),
     SiseliSensorEntityDescription(
+        key="last_data_received",
+        translation_key="last_data_received",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        available_offline=True,
+    ),
+    SiseliSensorEntityDescription(
         key="load_percent",
         translation_key="load_percent",
         state_class=SensorStateClass.MEASUREMENT,
@@ -215,6 +227,13 @@ class SiseliSensorEntity(CoordinatorEntity[SiseliCoordinator], SensorEntity):
         self._attr_unique_id = (
             f"{coordinator.config_entry.entry_id}_{description.key}"
         )
+
+    @property
+    def available(self) -> bool:
+        """Hide telemetry while the inverter is offline instead of showing stale values."""
+        if self.entity_description.available_offline:
+            return self.coordinator.data is not None
+        return super().available and self.coordinator.device_online is not False
 
     @property
     def device_info(self) -> DeviceInfo:

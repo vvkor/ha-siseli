@@ -5,9 +5,10 @@ from __future__ import annotations
 import sys
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from enum import IntEnum, StrEnum
 from types import ModuleType
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -33,7 +34,12 @@ class _RateLimitError(_NetworkError):
 
 
 class _ApiError(Exception):
-    """Fake SDK API error."""
+    """Fake SDK API error (the real one is ``ApiError(code, message)``)."""
+
+    def __init__(self, message: str = "", code: int = -1) -> None:
+        self.code = code
+        self.message = message
+        super().__init__(message)
 
 
 class _ConfigAccess(IntEnum):
@@ -314,12 +320,18 @@ class _StateAttribute:
 class _DeviceState:
     """Fake DeviceState with a fields mapping."""
 
-    def __init__(self, fields: dict) -> None:
+    def __init__(self, fields: dict, *, time: datetime | None = None) -> None:
         self.fields = {k: _StateAttribute(v) for k, v in fields.items()}
+        # A fresh snapshot, like the cloud's newest report from an online inverter.
+        self.time = time if time is not None else _SNAPSHOT_TIME
 
     def to_sensor_data(self) -> dict:
         """Stand-in for the SDK normalized telemetry contract."""
-        return {k: attr.value for k, attr in self.fields.items()}
+        return {
+            k: attr.value
+            for k, attr in self.fields.items()
+            if k != "last_data_received"
+        }
 
     def to_device_info(self) -> dict:
         """Stand-in for the SDK device identification contract."""
@@ -327,10 +339,14 @@ class _DeviceState:
 
 
 class _Device:
-    """Fake Device with an id."""
+    """Fake Device with an id and the cloud's connectivity fields."""
 
-    def __init__(self, device_id: str) -> None:
+    def __init__(self, device_id: str, *, is_online: bool = True) -> None:
         self.id = device_id
+        self.is_online = is_online
+        self.last_online_at = datetime(2026, 11, 21, 12, 0, tzinfo=UTC)
+        self.last_data_at = self.last_online_at
+        self.raw = {"isOnline": is_online}
 
 
 class _SiseliClient:
@@ -344,6 +360,7 @@ class _SiseliClient:
         self.get_device_state = AsyncMock(
             return_value=_DeviceState(_DEFAULT_DATA.copy())
         )
+        self.get_device = AsyncMock(return_value=_Device("device-001"))
         self.get_device_energy_totals = AsyncMock(return_value=dict(_ENERGY_TOTALS))
         self._config_values = dict(_CONFIG_DEFAULTS)
         self.get_device_config = AsyncMock(side_effect=self._get_device_config)
@@ -392,6 +409,8 @@ _DEVICE_INFO: dict = {
 # Lifetime counters (kWh) keyed by the API property key.
 _ENERGY_TOTALS: dict = {"pvGeneratedEnergy": 1234.5}
 
+_SNAPSHOT_TIME = datetime.now(UTC)
+
 _DEFAULT_DATA: dict = {
     # Stable semantic fields returned by DeviceState.to_sensor_data().
     "battery_soc": 85.0,
@@ -410,6 +429,8 @@ _DEFAULT_DATA: dict = {
     "inverter_mode": "Battery mode",
     "load_percent": 14.0,
     "rated_apparent_power": 5000.0,
+    # Added by the coordinator from the snapshot time of the latest report.
+    "last_data_received": _SNAPSHOT_TIME,
     "heat_sink_temperature": 41.0,
     "bus_voltage": 390.0,
     "charging_status": "Charging",
@@ -498,6 +519,7 @@ def mock_siseli_client():
     client.authenticate = AsyncMock()
     client.get_all_devices = AsyncMock(return_value=[_Device("device-001")])
     client.get_device_state = AsyncMock(return_value=_DeviceState(_DEFAULT_DATA.copy()))
+    client.get_device = AsyncMock(return_value=_Device("device-001"))
     client.get_device_energy_totals = AsyncMock(return_value=dict(_ENERGY_TOTALS))
     client.get_device_config = AsyncMock(
         side_effect=lambda device_id, *, key: _AttributeMetadata(
@@ -532,3 +554,13 @@ def mock_config_entry_data():
 def mock_config_entry_options():
     """Return standard config entry options."""
     return {}
+
+
+@pytest.fixture
+def patched_client(mock_siseli_client):
+    """Make the coordinator use the mocked SDK client."""
+    with patch(
+        "custom_components.siseli.coordinator.SiseliClient",
+        return_value=mock_siseli_client,
+    ):
+        yield mock_siseli_client
