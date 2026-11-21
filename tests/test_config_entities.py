@@ -13,9 +13,11 @@ from homeassistant.config_entries import ConfigEntry, SOURCE_USER
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
+from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from custom_components.siseli.config_coordinator import (
     CONFIG_REFRESH_INTERVAL,
+    CONFIG_RETRY_INTERVAL,
     SiseliConfigCoordinator,
 )
 from custom_components.siseli.const import (
@@ -172,6 +174,28 @@ async def test_config_refresh_is_separate_slow_and_never_writes(
     mock_siseli_client.get_cached_device_configs.assert_awaited_once()
     mock_siseli_client.get_device_config.assert_not_awaited()
     mock_siseli_client.safe_set_device_config.assert_not_awaited()
+
+
+async def test_config_refresh_retries_quickly_until_data_arrives(
+    hass: HomeAssistant, mock_siseli_client
+) -> None:
+    """Failed or empty refreshes use the short retry interval, then return to slow."""
+    _, _, coordinator = _make_config_coordinator(hass, mock_siseli_client)
+    good = await mock_siseli_client.get_cached_device_configs("device-001")
+
+    mock_siseli_client.get_cached_device_configs.side_effect = _ApiError("Device is offline")
+    with pytest.raises(UpdateFailed):
+        await coordinator._async_update_data()
+    assert coordinator.update_interval == CONFIG_RETRY_INTERVAL
+
+    mock_siseli_client.get_cached_device_configs.side_effect = None
+    mock_siseli_client.get_cached_device_configs.return_value = {}
+    assert await coordinator._async_update_data() == {}
+    assert coordinator.update_interval == CONFIG_RETRY_INTERVAL
+
+    mock_siseli_client.get_cached_device_configs.return_value = good
+    assert await coordinator._async_update_data()
+    assert coordinator.update_interval == CONFIG_REFRESH_INTERVAL
 
 
 async def test_config_refresh_omits_keys_missing_from_cache(

@@ -91,7 +91,7 @@ writable because the SDK does not support writing that setting.
 | `cannot_connect` error | Network issue or Siseli cloud outage | Check internet connectivity and retry |
 | Integration shows as unavailable | Transient cloud error | It will recover automatically on next poll |
 | Re-authentication prompt | Credentials expired or changed | Follow the re-authentication flow in Notifications |
-| Configuration entities unknown/unavailable while telemetry works | The separate configuration refresh (every 15 minutes) hit a cloud API error, or the setting is absent from the cached configuration | Retries on the next refresh; telemetry is unaffected. Reload the integration to retry sooner |
+| Configuration entities unknown/unavailable while telemetry works | The separate configuration refresh (every 15 minutes) hit a cloud API error, or the setting is absent from the cached configuration | Retried every minute until values arrive, and immediately when telemetry recovers; telemetry is unaffected |
 
 ---
 

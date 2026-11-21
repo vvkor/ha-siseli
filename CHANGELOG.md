@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Configuration entities (switch, select, number) now recover right after the inverter comes back online instead of waiting for the 15-minute refresh or an integration reload: a refresh is requested when telemetry recovers, and failed or empty refreshes are retried every minute.
+- Cloud API errors such as `Device is offline` (71000) are handled as normal update failures instead of logging an "Unexpected error" traceback on every poll.
+
 ### Changed
 
 - Update the pinned `python-siseli` dependency to 0.2.6, including the corrected configuration request payloads.

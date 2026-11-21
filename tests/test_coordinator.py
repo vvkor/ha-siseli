@@ -25,6 +25,7 @@ from .conftest import (
     MOCK_USERNAME,
     AuthenticationError,
     NetworkError,
+    _ApiError,
     _Device,
     _DeviceState,
 )
@@ -181,6 +182,34 @@ async def test_async_update_data_connection_failure(hass: HomeAssistant) -> None
 
     with pytest.raises(UpdateFailed, match="Error communicating with Siseli API"):
         await coordinator._async_update_data()
+
+
+async def test_api_error_device_offline_raises_update_failed(hass: HomeAssistant) -> None:
+    """Cloud API errors such as "Device is offline" become UpdateFailed."""
+    coordinator, mock_client = _make_coordinator(hass)
+    mock_client.get_device_state.side_effect = _ApiError("API error 71000: Device is offline")
+
+    with pytest.raises(UpdateFailed, match="Error communicating with Siseli API"):
+        await coordinator._async_update_data()
+    assert coordinator._consecutive_failures == 1
+
+
+async def test_recovery_requests_configuration_refresh(hass: HomeAssistant) -> None:
+    """Configuration refresh is requested as soon as telemetry recovers."""
+    coordinator, mock_client = _make_coordinator(hass)
+    config = MagicMock()
+    config.async_request_refresh = AsyncMock()
+    coordinator.config_coordinator = config
+    mock_client.get_device_state.side_effect = _ApiError("API error 71000: Device is offline")
+    with pytest.raises(UpdateFailed):
+        await coordinator._async_update_data()
+    mock_client.get_device_state.side_effect = None
+    mock_client.get_device_state.return_value = _DeviceState(DEFAULT_DATA.copy())
+
+    await coordinator._async_update_data()
+    await hass.async_block_till_done()
+
+    config.async_request_refresh.assert_awaited_once()
 
 
 async def test_consecutive_failures_increment(hass: HomeAssistant) -> None:

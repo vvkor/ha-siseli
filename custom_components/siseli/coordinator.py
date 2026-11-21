@@ -15,7 +15,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from siseli import AuthenticationError, NetworkError, SiseliClient
+from siseli import ApiError, AuthenticationError, NetworkError, SiseliClient
 from siseli.open_auth import attach_open_auth
 
 from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
@@ -80,7 +80,8 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except AuthenticationError as err:
             _LOGGER.warning("Siseli authentication failed; reauthentication required")
             raise ConfigEntryAuthFailed(err) from err
-        except NetworkError as err:
+        except (NetworkError, ApiError) as err:
+            # ApiError covers cloud-side conditions such as "Device is offline" (71000).
             self._consecutive_failures += 1
             if self._consecutive_failures == 1:
                 _LOGGER.warning(
@@ -101,6 +102,12 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "Siseli API connection restored after %d consecutive failure(s)",
                 self._consecutive_failures,
             )
+            # Configuration is refreshed on a slow timer; do not make its entities
+            # wait for it after the inverter comes back.
+            if self.config_coordinator is not None:
+                self.hass.async_create_task(
+                    self.config_coordinator.async_request_refresh()
+                )
         self._consecutive_failures = 0
         _LOGGER.debug("Siseli data updated successfully")
         # The SDK owns API field mapping, unit conversion, and derived telemetry.

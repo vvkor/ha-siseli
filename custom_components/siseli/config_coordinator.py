@@ -30,6 +30,8 @@ from .coordinator import SiseliCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 CONFIG_REFRESH_INTERVAL = timedelta(minutes=15)
+# Used while the last refresh failed or returned nothing, so entities recover quickly.
+CONFIG_RETRY_INTERVAL = timedelta(minutes=1)
 
 _ACCESS_BY_NAME = {
     "safe": ConfigAccess.SAFE,
@@ -69,7 +71,17 @@ class SiseliConfigCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     async def _async_update_data(self) -> dict[str, Any]:
-        """Refresh readable configuration values at the slower interval."""
+        """Refresh readable configuration values, retrying quickly until data arrives."""
+        try:
+            data = await self._async_fetch()
+        except UpdateFailed:
+            self.update_interval = CONFIG_RETRY_INTERVAL
+            raise
+        self.update_interval = CONFIG_RETRY_INTERVAL if not data else CONFIG_REFRESH_INTERVAL
+        return data
+
+    async def _async_fetch(self) -> dict[str, Any]:
+        """Read the cached configuration from the cloud."""
         try:
             cached = await self.client.get_cached_device_configs(self.device_id)
         except AuthenticationError as err:
