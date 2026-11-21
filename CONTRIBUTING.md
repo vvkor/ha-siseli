@@ -10,7 +10,7 @@ Thanks for contributing to the Siseli Home Assistant integration.
 
 ## Development setup
 
-1. Use Python 3.12.
+1. Use Python 3.13 or newer.
 2. Create and activate a virtual environment.
 3. Install test dependencies:
 
@@ -21,7 +21,7 @@ Thanks for contributing to the Siseli Home Assistant integration.
 4. Run the existing checks before opening a pull request:
 
    ```bash
-   ruff check custom_components/
+   ruff check custom_components/ tests/
    python -m pytest tests/ --tb=short -q
    ```
 

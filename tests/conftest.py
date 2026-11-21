@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Mapping
 from dataclasses import dataclass
-from enum import Enum, IntEnum
-from typing import Mapping
+from enum import IntEnum, StrEnum
 from types import ModuleType
 from unittest.mock import AsyncMock, MagicMock
 
@@ -35,12 +35,12 @@ class _ConfigAccess(IntEnum):
     CRITICAL = 3
 
 
-class _ConfigKind(str, Enum):
+class _ConfigKind(StrEnum):
     ENUM = "enum"
     NUMBER = "number"
 
 
-class _ConfigWriteStatus(str, Enum):
+class _ConfigWriteStatus(StrEnum):
     APPLIED = "applied"
     UNKNOWN = "unknown"
     DRY_RUN = "dry_run"
@@ -439,7 +439,7 @@ sys.modules.setdefault("siseli", _fake_siseli)
 # Import the real SDK submodules while the real package is still importable
 # (the parent entry may already be the fake, but the submodule files are on-disk)
 # and pin them directly in sys.modules so test_open_auth.py can use them.
-import importlib as _importlib
+import importlib as _importlib  # noqa: E402
 
 for _submod in ("siseli.const", "siseli.open_auth"):
     if _submod not in sys.modules:

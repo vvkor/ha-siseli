@@ -146,17 +146,45 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle reauthentication confirmation."""
+        return await self._async_update_credentials(
+            "reauth_confirm", user_input, self._get_reauth_entry(), "reauth_successful"
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle changing the account password without a failed login."""
+        return await self._async_update_credentials(
+            "reconfigure",
+            user_input,
+            self._get_reconfigure_entry(),
+            "reconfigure_successful",
+        )
+
+    async def _async_update_credentials(
+        self,
+        step_id: str,
+        user_input: dict[str, Any] | None,
+        entry: ConfigEntry,
+        success_reason: str,
+    ) -> ConfigFlowResult:
+        """Validate new credentials for the existing account and store them."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
             user_input = _normalize_user_input(user_input)
             username = user_input[CONF_USERNAME]
 
+            # The entry is bound to one cloud account; never re-point it to another.
+            await self.async_set_unique_id(username)
+            self._abort_if_unique_id_mismatch(reason="wrong_account")
+
             try:
                 await _validate_credentials(self.hass, user_input)
             except AuthenticationError as err:
                 _LOGGER.warning(
-                    "Siseli re-authentication failed for username '%s': %s",
+                    "Siseli %s failed for username '%s': %s",
+                    "re-authentication" if step_id == "reauth_confirm" else "credential update",
                     username,
                     err,
                 )
@@ -164,17 +192,21 @@ class SiseliConfigFlow(ConfigFlow, domain=DOMAIN):
             except NetworkError:
                 errors["base"] = "cannot_connect"
             except Exception:
-                _LOGGER.exception("Unexpected error during Siseli reauth flow")
+                _LOGGER.exception("Unexpected error during Siseli %s flow", step_id)
                 errors["base"] = "unknown"
             else:
                 return self.async_update_reload_and_abort(
-                    self._get_reauth_entry(),
+                    entry,
                     data_updates=user_input,
+                    reason=success_reason,
                 )
 
         return self.async_show_form(
-            step_id="reauth_confirm",
-            data_schema=STEP_USER_DATA_SCHEMA,
+            step_id=step_id,
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_USER_DATA_SCHEMA,
+                {CONF_USERNAME: entry.data.get(CONF_USERNAME)},
+            ),
             errors=errors,
         )
 

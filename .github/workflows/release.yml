@@ -19,7 +19,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install dependencies
         run: |
@@ -32,7 +32,7 @@ jobs:
         run: python scripts/release_metadata.py validate "$TAG_NAME"
 
       - name: Run ruff
-        run: ruff check custom_components/
+        run: ruff check custom_components/ tests/
 
       - name: Run tests
         run: python -m pytest tests/ --tb=short -q

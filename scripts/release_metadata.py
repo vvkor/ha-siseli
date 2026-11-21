@@ -20,7 +20,7 @@ def _read_version(tag_name: str) -> str:
 
 def _read_changelog_section(version: str) -> str:
     changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
-    pattern = rf"## \[{re.escape(version)}\]\n(.*?)(?:\n## \[|\Z)"
+    pattern = rf"## \[{re.escape(version)}\][^\n]*\n(.*?)(?:\n## \[|\Z)"
     match = re.search(pattern, changelog, re.S)
     if not match:
         raise SystemExit(f"CHANGELOG.md is missing section ## [{version}]")

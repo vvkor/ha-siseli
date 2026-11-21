@@ -353,6 +353,86 @@ async def test_reauth_invalid_auth(
     assert MOCK_PASSWORD not in caplog.text
 
 
+async def test_reauth_rejects_different_account(hass: HomeAssistant) -> None:
+    """Reauthentication cannot re-point the entry to another cloud account."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=MOCK_USERNAME,
+        data={CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+    )
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.siseli.config_flow._validate_credentials",
+        return_value={"title": "other"},
+    ) as mock_validate_credentials:
+        result = await entry.start_reauth_flow(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_USERNAME: "other-account", CONF_PASSWORD: "secret"},
+        )
+
+    assert result["type"] == FlowResultType.ABORT
+    assert result["reason"] == "wrong_account"
+    mock_validate_credentials.assert_not_awaited()
+    assert entry.data[CONF_USERNAME] == MOCK_USERNAME
+
+
+async def test_reconfigure_updates_password(hass: HomeAssistant) -> None:
+    """The reconfigure step stores a new password for the same account."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=MOCK_USERNAME,
+        data={CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+    )
+    entry.add_to_hass(hass)
+
+    with (
+        patch(
+            "custom_components.siseli.config_flow._validate_credentials",
+            return_value={"title": MOCK_USERNAME},
+        ),
+        patch("custom_components.siseli.async_setup_entry", return_value=True),
+    ):
+        result = await entry.start_reconfigure_flow(hass)
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "reconfigure"
+
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: "new_password"},
+        )
+        await hass.async_block_till_done()
+
+    assert result["type"] == FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data[CONF_PASSWORD] == "new_password"
+
+
+async def test_reconfigure_invalid_auth(hass: HomeAssistant) -> None:
+    """Wrong credentials keep the reconfigure form open with an error."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id=MOCK_USERNAME,
+        data={CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
+    )
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.siseli.config_flow._validate_credentials",
+        side_effect=AuthenticationError("HTTP 401"),
+    ):
+        result = await entry.start_reconfigure_flow(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: "bad"},
+        )
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["errors"] == {"base": "invalid_auth"}
+    assert entry.data[CONF_PASSWORD] == MOCK_PASSWORD
+
+
 # ---------------------------------------------------------------------------
 # Options flow
 # ---------------------------------------------------------------------------

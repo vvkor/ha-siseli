@@ -17,6 +17,14 @@
           "username": "Username",
           "password": "Password"
         }
+      },
+      "reconfigure": {
+        "title": "Update Siseli credentials",
+        "description": "Update the password for this Siseli cloud account.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
       }
     },
     "error": {
@@ -26,7 +34,9 @@
     },
     "abort": {
       "already_configured": "This Siseli account is already configured.",
-      "reauth_successful": "Re-authentication was successful."
+      "reauth_successful": "Re-authentication was successful.",
+      "reconfigure_successful": "The Siseli credentials were updated.",
+      "wrong_account": "The credentials belong to a different Siseli account. Add that account as a new integration instead."
     }
   },
   "options": {
@@ -131,36 +141,36 @@
       }
     },
     "switch": {
-      "buzzerEnabled": {"name": "Buzzer"},
-      "lcdBackLightControlSetting": {"name": "LCD backlight"},
-      "lcdReturnToDefaultPageSetting": {"name": "LCD return to default page"},
-      "faultCodeRecordSetting": {"name": "Fault code record"},
-      "alarmOnWhenPrimarySourceInterruptSetting": {"name": "Alarm on primary source interruption"},
-      "overTemperatureRestartSetting": {"name": "Over-temperature restart"},
-      "overLoadRestartSetting": {"name": "Overload restart"},
-      "overloadBypass": {"name": "Overload bypass"},
-      "powerSavingEnable": {"name": "Power saving"},
-      "setBatteryEqualizationEnable": {"name": "Battery equalization"}
+      "buzzer_enabled": {"name": "Buzzer"},
+      "lcd_back_light_control_setting": {"name": "LCD backlight"},
+      "lcd_return_to_default_page_setting": {"name": "LCD return to default page"},
+      "fault_code_record_setting": {"name": "Fault code record"},
+      "alarm_on_when_primary_source_interrupt_setting": {"name": "Alarm on primary source interruption"},
+      "over_temperature_restart_setting": {"name": "Over-temperature restart"},
+      "over_load_restart_setting": {"name": "Overload restart"},
+      "overload_bypass": {"name": "Overload bypass"},
+      "power_saving_enable": {"name": "Power saving"},
+      "set_battery_equalization_enable": {"name": "Battery equalization"}
     },
     "select": {
-      "settingDeviceChargerPriority": {"name": "Charger source priority"},
-      "settingDeviceGridWorkingRange": {"name": "Grid working range"},
-      "settingBatteryType": {"name": "Battery type"},
-      "setACOutputRatedVoltage": {"name": "AC output rated voltage"},
-      "settingInverterOutputRatingFrequency": {"name": "AC output rated frequency"}
+      "setting_device_charger_priority": {"name": "Charger source priority"},
+      "setting_device_grid_working_range": {"name": "Grid working range"},
+      "setting_battery_type": {"name": "Battery type"},
+      "set_ac_output_rated_voltage": {"name": "AC output rated voltage"},
+      "setting_inverter_output_rating_frequency": {"name": "AC output rated frequency"}
     },
     "number": {
-      "setMaxChargingCurrent": {"name": "Maximum charging current"},
-      "setUtilityMaxChargingCurrent": {"name": "Maximum utility charging current"},
-      "setBatteryCutOffVoltage": {"name": "Battery cut-off voltage"},
-      "setBatteryRechargingVoltage": {"name": "Battery recharge voltage"},
-      "setBatteryRedischargingVoltage": {"name": "Battery re-discharge voltage"},
-      "setBatteryCVChargeVoltage": {"name": "Battery bulk (CV) voltage"},
-      "setBatteryFloatChargingVoltage": {"name": "Battery float voltage"},
-      "setBatteryEqualizationVoltage": {"name": "Battery equalization voltage"},
-      "setBatteryEqualizationTime": {"name": "Battery equalization time"},
-      "setBatteryEqualizationOverTime": {"name": "Battery equalization timeout"},
-      "setBatteryEqualizationPeriod": {"name": "Battery equalization period"}
+      "set_max_charging_current": {"name": "Maximum charging current"},
+      "set_utility_max_charging_current": {"name": "Maximum utility charging current"},
+      "set_battery_cut_off_voltage": {"name": "Battery cut-off voltage"},
+      "set_battery_recharging_voltage": {"name": "Battery recharge voltage"},
+      "set_battery_redischarging_voltage": {"name": "Battery re-discharge voltage"},
+      "set_battery_cv_charge_voltage": {"name": "Battery bulk (CV) voltage"},
+      "set_battery_float_charging_voltage": {"name": "Battery float voltage"},
+      "set_battery_equalization_voltage": {"name": "Battery equalization voltage"},
+      "set_battery_equalization_time": {"name": "Battery equalization time"},
+      "set_battery_equalization_over_time": {"name": "Battery equalization timeout"},
+      "set_battery_equalization_period": {"name": "Battery equalization period"}
     }
   }
 }

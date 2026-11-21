@@ -4,11 +4,9 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
-from homeassistant.config_entries import ConfigEntry, SOURCE_USER
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.siseli.const import DOMAIN
 from custom_components.siseli.coordinator import SiseliCoordinator
@@ -16,25 +14,20 @@ from custom_components.siseli.diagnostics import async_get_config_entry_diagnost
 
 from .conftest import DEFAULT_DATA, DEVICE_INFO, MOCK_PASSWORD, MOCK_USERNAME
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 
-def _make_entry_with_coordinator(hass: HomeAssistant) -> ConfigEntry:
+def _make_entry_with_coordinator(hass: HomeAssistant) -> MockConfigEntry:
     """Create a config entry with a mocked coordinator attached."""
-    entry = ConfigEntry(
-        version=1,
-        minor_version=1,
+    entry = MockConfigEntry(
         domain=DOMAIN,
         title=MOCK_USERNAME,
         data={CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
         options={"scan_interval": 60},
-        source=SOURCE_USER,
         entry_id="diag_test_id",
         unique_id=MOCK_USERNAME,
-        discovery_keys={},
     )
     mock_client = MagicMock()
     mock_client.get_data = AsyncMock(return_value=DEFAULT_DATA.copy())
@@ -121,3 +114,12 @@ async def test_diagnostics_options_included(hass: HomeAssistant) -> None:
 
     assert diag["entry"]["options"] == {"scan_interval": 60}
     assert diag["configuration"]["write_access_level"] == "disabled"
+
+
+async def test_diagnostics_does_not_leak_username(hass: HomeAssistant) -> None:
+    """The account name must not appear anywhere in the diagnostics dump."""
+    entry = _make_entry_with_coordinator(hass)
+    diag = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert MOCK_USERNAME not in repr(diag)
+    assert MOCK_PASSWORD not in repr(diag)
