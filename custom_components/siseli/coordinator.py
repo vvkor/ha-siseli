@@ -148,8 +148,16 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if self.hass.config_entries.async_get_entry(self.config_entry.entry_id) is None:
             return
         registry = dr.async_get(self.hass)
-        device = registry.async_get_device(
-            identifiers={(DOMAIN, self.config_entry.entry_id)}
+        identifier = (DOMAIN, self.config_entry.entry_id)
+        device = next(
+            (
+                device
+                for device in dr.async_entries_for_config_entry(
+                    registry, self.config_entry.entry_id
+                )
+                if identifier in device.identifiers
+            ),
+            None,
         )
         model = self.device_info.get("machine_type")
         sw_version = self.device_info.get("firmware_version")
