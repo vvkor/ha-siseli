@@ -234,8 +234,8 @@ async def test_device_info_uses_model_and_firmware(hass: HomeAssistant) -> None:
 
 
 async def test_device_info_without_identification(hass: HomeAssistant) -> None:
-    """Before identification is known, model/firmware are simply unset."""
+    """Unknown model/firmware are omitted so they never erase registry values."""
     coordinator = _make_coordinator_with_data(hass)
     info = SiseliSensorEntity(coordinator, SENSORS[0]).device_info
-    assert info["model"] is None
-    assert info["sw_version"] is None
+    assert "model" not in info
+    assert "sw_version" not in info

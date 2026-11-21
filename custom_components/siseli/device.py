@@ -9,12 +9,19 @@ from .coordinator import SiseliCoordinator
 
 
 def build_device_info(coordinator: SiseliCoordinator) -> DeviceInfo:
-    """Return the inverter device, enriched with model/firmware once known."""
+    """Return the inverter device, enriched with model/firmware once known.
+
+    Unknown fields are left out (not set to ``None``) so they never erase values
+    stored in the device registry, e.g. while the inverter is offline.
+    """
     info = coordinator.device_info
-    return DeviceInfo(
+    device = DeviceInfo(
         identifiers={(DOMAIN, coordinator.config_entry.entry_id)},
         name="Siseli Inverter",
         manufacturer="Siseli",
-        model=info.get("machine_type"),
-        sw_version=info.get("firmware_version"),
     )
+    if model := info.get("machine_type"):
+        device["model"] = model
+    if sw_version := info.get("firmware_version"):
+        device["sw_version"] = sw_version
+    return device

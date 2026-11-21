@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.2] - 2026-11-21
+
+### Fixed
+
+- Reloading or restarting Home Assistant while the inverter is offline no longer leaves the integration in Home Assistant's setup-retry back-off (up to 10 minutes). The entry now loads with unavailable entities and recovers on the next regular poll as soon as the inverter reconnects. Cloud or login failures still use the normal setup retry.
+- Model and firmware are no longer erased from the device registry when the integration starts while the inverter is offline, and they are filled in as soon as the inverter reports them.
+
+---
+
 ## [0.3.1] - 2026-11-21
 
 ### Changed

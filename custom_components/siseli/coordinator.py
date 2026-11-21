@@ -12,6 +12,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
@@ -135,11 +136,33 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         _LOGGER.debug("Siseli data updated successfully")
         # The SDK owns API field mapping, unit conversion, and derived telemetry.
         self.device_info = state.to_device_info()
+        self._async_sync_device_registry()
         data = state.to_sensor_data()
         data["pv_generated_energy_total"] = self._energy_totals.get(
             PV_GENERATED_ENERGY_KEY
         )
         return data
+
+    def _async_sync_device_registry(self) -> None:
+        """Fill in model/firmware when they only become known after entity setup."""
+        if self.hass.config_entries.async_get_entry(self.config_entry.entry_id) is None:
+            return
+        registry = dr.async_get(self.hass)
+        device = registry.async_get_device(
+            identifiers={(DOMAIN, self.config_entry.entry_id)}
+        )
+        model = self.device_info.get("machine_type")
+        sw_version = self.device_info.get("firmware_version")
+        if device is None or (
+            (not model or device.model == model)
+            and (not sw_version or device.sw_version == sw_version)
+        ):
+            return
+        registry.async_update_device(
+            device.id,
+            model=model or device.model,
+            sw_version=sw_version or device.sw_version,
+        )
 
     async def _async_refresh_energy_totals(self) -> None:
         """Refresh lifetime energy counters at most once per ENERGY_TOTALS_INTERVAL."""

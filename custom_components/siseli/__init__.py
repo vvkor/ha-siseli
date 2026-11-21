@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import entity_registry as er
 
 from .config_coordinator import SiseliConfigCoordinator
@@ -16,6 +19,8 @@ from .const import (
     DOMAIN,
 )
 from .coordinator import SiseliCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 type SiseliConfigEntry = ConfigEntry[SiseliCoordinator]
 
@@ -49,7 +54,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: SiseliConfigEntry) -> bo
         hass, entry.entry_id, lambda entity_entry: _async_migrate_unique_id(entry, entity_entry)
     )
     coordinator = SiseliCoordinator(hass, entry)
-    await coordinator.async_config_entry_first_refresh()
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except ConfigEntryNotReady:
+        # Without a discovered device the cloud is unreachable: let Home Assistant
+        # retry the setup. Otherwise the account works and only the inverter is
+        # offline, so load the entities (unavailable) and let regular polling
+        # bring them back as soon as the inverter reconnects, instead of waiting
+        # for Home Assistant's setup retry back-off of up to 10 minutes.
+        if coordinator.device_id is None:
+            raise
+        _LOGGER.warning(
+            "Siseli inverter is currently unreachable; entities will recover "
+            "automatically when it is back online"
+        )
     access = entry.options.get(CONF_CONFIG_ACCESS, DEFAULT_CONFIG_ACCESS)
     if access != DEFAULT_CONFIG_ACCESS:
         config_coordinator = SiseliConfigCoordinator(

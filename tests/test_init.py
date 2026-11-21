@@ -2,18 +2,31 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+)
 
 from custom_components.siseli.const import CONF_CONFIG_ACCESS, DOMAIN
 
-from .conftest import MOCK_PASSWORD, MOCK_USERNAME
+from .conftest import (
+    DEFAULT_DATA,
+    MOCK_PASSWORD,
+    MOCK_USERNAME,
+    NetworkError,
+    _ApiError,
+    _DeviceState,
+)
 
 
 def _entry(options: dict | None = None) -> MockConfigEntry:
@@ -123,3 +136,82 @@ async def test_deprecated_apparent_power_unique_id_is_migrated(
         "sensor", DOMAIN, f"{entry.entry_id}_load_apparent_power"
     ) is None
     assert hass.states.get(old.entity_id).state == "5000.0"
+
+
+async def _advance(hass: HomeAssistant, seconds: int) -> None:
+    """Move time forward so scheduled coordinator refreshes run."""
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=seconds))
+    await hass.async_block_till_done()
+
+
+async def test_setup_succeeds_while_inverter_is_offline(
+    hass: HomeAssistant, patched_client
+) -> None:
+    """An offline inverter must not put the entry into Home Assistant's slow retry."""
+    patched_client.get_device_state.side_effect = _ApiError("API error 71000: Device is offline")
+    entry = _entry()
+    entry.add_to_hass(hass)
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.LOADED
+    assert hass.states.get("sensor.siseli_inverter_battery_voltage").state == "unavailable"
+
+
+async def test_entities_recover_on_the_next_poll_after_offline_setup(
+    hass: HomeAssistant, patched_client
+) -> None:
+    """Sensors, controls and device details recover within one polling interval."""
+    patched_client.get_device_state.side_effect = _ApiError("API error 71000: Device is offline")
+    patched_client.get_cached_device_configs.side_effect = _ApiError(
+        "API error 71000: Device is offline"
+    )
+    entry = _entry({CONF_CONFIG_ACCESS: "safe"})
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get("switch.siseli_inverter_buzzer").state == "unavailable"
+
+    patched_client.get_device_state.side_effect = None
+    patched_client.get_device_state.return_value = _DeviceState(DEFAULT_DATA.copy())
+    patched_client.get_cached_device_configs.side_effect = None
+    await _advance(hass, 31)
+
+    assert hass.states.get("sensor.siseli_inverter_battery_voltage").state == "52.1"
+    assert hass.states.get("switch.siseli_inverter_buzzer").state == "off"
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    assert device.model == "SLP-5K"
+    assert device.sw_version == "1.2.3"
+
+
+async def test_setup_retries_when_the_cloud_is_unreachable(
+    hass: HomeAssistant, patched_client
+) -> None:
+    """Without a discovered device the setup is retried by Home Assistant."""
+    patched_client.get_all_devices.side_effect = NetworkError("no route")
+    entry = _entry()
+    entry.add_to_hass(hass)
+
+    assert not await hass.config_entries.async_setup(entry.entry_id)
+
+    assert entry.state is ConfigEntryState.SETUP_RETRY
+
+
+async def test_registry_model_is_not_erased_while_offline(
+    hass: HomeAssistant, patched_client
+) -> None:
+    """Known model and firmware survive a restart during an inverter outage."""
+    entry = _entry()
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    await hass.config_entries.async_unload(entry.entry_id)
+
+    patched_client.get_device_state.side_effect = _ApiError("API error 71000: Device is offline")
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    assert device.model == "SLP-5K"
+    assert device.sw_version == "1.2.3"
