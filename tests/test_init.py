@@ -160,7 +160,7 @@ async def test_setup_succeeds_while_inverter_is_offline(
 
 
 async def test_entities_recover_on_the_next_poll_after_offline_setup(
-    hass: HomeAssistant, patched_client
+    hass: HomeAssistant, patched_client, caplog: pytest.LogCaptureFixture
 ) -> None:
     """Sensors, controls and device details recover within one polling interval."""
     patched_client.get_device_state.side_effect = _ApiError("API error 71000: Device is offline")
@@ -183,6 +183,7 @@ async def test_entities_recover_on_the_next_poll_after_offline_setup(
     device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
     assert device.model == "SLP-5K"
     assert device.sw_version == "1.2.3"
+    assert "deprecated" not in caplog.text
 
 
 async def test_setup_retries_when_the_cloud_is_unreachable(

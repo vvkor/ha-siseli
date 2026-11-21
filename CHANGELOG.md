@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Stop calling the deprecated `device_registry.async_get_device`, which logged a Home Assistant deprecation warning on every start.
+
 ---
 
 ## [0.3.2] - 2026-11-21
