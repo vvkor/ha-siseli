@@ -33,7 +33,7 @@ Built on top of [python-siseli](https://github.com/vvkor/python-siseli) — all 
 |-----------|--------------------|-------|
 | Home Assistant Core | 2024.11+ | `hacs.json` sets the minimum supported HA version for HACS |
 | HACS | Latest stable release | Recommended installation path for upgrades and rollbacks |
-| Siseli SDK | `python-siseli==0.2.6` | Pinned in `manifest.json`; API and domain logic stay in the SDK |
+| Siseli SDK | `python-siseli==0.3.0` | Pinned in `manifest.json`; API and domain logic stay in the SDK |
 
 ---
 
@@ -75,7 +75,7 @@ so battery-voltage limits are scaled correctly.
 Only settings up to the selected risk level are exposed, as switch, select and
 number entities in the *Configuration* category. Their values are refreshed
 separately from telemetry (every 15 minutes) and updated after each verified
-write; writes are serialized and use the safe-write API of `python-siseli` 0.2.6.
+write; writes are serialized and use the safe-write API of `python-siseli` 0.3.0.
 If a write result cannot be confirmed, the entity keeps the last confirmed value.
 
 Output source priority is available only as a read-only sensor; it is not
@@ -106,7 +106,7 @@ writable because the SDK does not support writing that setting.
 ## Support boundaries
 
 - Supported setup path: **Settings → Devices & Services → Add Integration** using the UI config flow.
-- Supported runtime scope: `python-siseli` telemetry and optional configuration controls (SDK 0.2.6) exposed through coordinator-backed entities.
+- Supported runtime scope: `python-siseli` telemetry and optional configuration controls (SDK 0.3.0) exposed through coordinator-backed entities.
 - Unsupported scope: YAML setup, beta/nightly Home Assistant builds, and HA-side Siseli API workarounds that belong in the SDK first.
 - See [SUPPORT.md](SUPPORT.md) for issue triage expectations and [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow.
 

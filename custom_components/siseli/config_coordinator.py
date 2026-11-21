@@ -21,6 +21,7 @@ from siseli import (
     ConfigRejected,
     ConfigValidationError,
     ConfigWriteStatus,
+    InvalidResponseError,
     NetworkError,
     config_value,
 )
@@ -87,7 +88,7 @@ class SiseliConfigCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             cached = await self.client.get_cached_device_configs(self.device_id)
         except AuthenticationError as err:
             raise ConfigEntryAuthFailed(err) from err
-        except (NetworkError, ApiError) as err:
+        except (NetworkError, ApiError, InvalidResponseError) as err:
             raise UpdateFailed(f"Could not refresh inverter configuration: {err}") from err
 
         # Keys missing from the cache are omitted so their entities show no value
@@ -129,7 +130,7 @@ class SiseliConfigCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 raise HomeAssistantError(
                     "The inverter rejected this configuration change."
                 ) from None
-            except (NetworkError, ApiError):
+            except (NetworkError, ApiError, InvalidResponseError):
                 self._log_write(key, self._current_value(key), value, "communication_error")
                 raise HomeAssistantError(
                     "Could not communicate with the inverter; the value was not changed."

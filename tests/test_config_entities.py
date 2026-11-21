@@ -57,6 +57,7 @@ from .conftest import (
     _ConfigValidationError,
     _ConfigWriteResult,
     _ConfigWriteStatus,
+    _InvalidResponseError,
     _NetworkError,
 )
 
@@ -336,6 +337,7 @@ async def test_unknown_write_surfaces_home_assistant_error_without_assuming_stat
         (_ConfigRejected(20210, "sensitive rejection payload"), "rejected this"),
         (_NetworkError("sensitive network payload"), "Could not communicate"),
         (_ApiError("sensitive api payload"), "Could not communicate"),
+        (_InvalidResponseError("sensitive body"), "Could not communicate"),
     ],
 )
 async def test_sdk_write_errors_surface_as_short_home_assistant_errors(

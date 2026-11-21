@@ -31,6 +31,7 @@ from .conftest import (
     _ApiError,
     _Device,
     _DeviceState,
+    _InvalidResponseError,
 )
 
 # ---------------------------------------------------------------------------
@@ -126,24 +127,19 @@ async def test_async_update_data_creates_client_in_executor(
     assert coordinator.client is mock_client
 
 
-async def test_async_update_data_injects_iot_open_app_id_header(
-    hass: HomeAssistant,
-) -> None:
-    """Coordinator attaches open-auth request signing hook after client creation."""
+async def test_client_is_created_with_open_auth_signing(hass: HomeAssistant) -> None:
+    """The SDK client is created with Open API request signing enabled."""
     coordinator, mock_client = _make_coordinator(hass)
     coordinator.client = None
-    mock_http = MagicMock()
-    mock_http.event_hooks = {"request": []}
-    mock_client._http = mock_http
 
-    with patch.object(
-        hass,
-        "async_add_executor_job",
-        new=AsyncMock(return_value=mock_client),
-    ):
+    with patch(
+        "custom_components.siseli.coordinator.SiseliClient", return_value=mock_client
+    ) as client_class:
         await coordinator._async_update_data()
 
-    assert len(mock_http.event_hooks["request"]) == 1
+    client_class.assert_called_once_with(
+        account=MOCK_USERNAME, password=MOCK_PASSWORD, open_auth=True
+    )
 
 
 async def test_async_update_data_no_devices(hass: HomeAssistant) -> None:
@@ -315,3 +311,12 @@ async def test_multiple_devices_logs_warning(
 
     assert coordinator.device_id == "device-001"
     assert "only the first one" in caplog.text
+
+
+async def test_invalid_response_raises_update_failed(hass: HomeAssistant) -> None:
+    """A malformed cloud response is a normal, retryable update failure."""
+    coordinator, mock_client = _make_coordinator(hass)
+    mock_client.get_device_state.side_effect = _InvalidResponseError("not json")
+
+    with pytest.raises(UpdateFailed, match="Error communicating with Siseli API"):
+        await coordinator._async_update_data()

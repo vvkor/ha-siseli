@@ -24,6 +24,10 @@ class _NetworkError(Exception):
     """Fake network error."""
 
 
+class _InvalidResponseError(Exception):
+    """Fake SDK invalid-response error."""
+
+
 class _ApiError(Exception):
     """Fake SDK API error."""
 
@@ -420,6 +424,7 @@ _fake_siseli = ModuleType("siseli")
 _fake_siseli.AuthenticationError = _AuthenticationError
 _fake_siseli.NetworkError = _NetworkError
 _fake_siseli.ApiError = _ApiError
+_fake_siseli.InvalidResponseError = _InvalidResponseError
 _fake_siseli.SiseliClient = _SiseliClient
 _fake_siseli.CONFIG_SPECS = _CONFIG_SPECS
 _fake_siseli.ConfigAccess = _ConfigAccess

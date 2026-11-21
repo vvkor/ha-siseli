@@ -216,27 +216,24 @@ async def test_validate_credentials_creates_client_in_executor(
     assert info == {"title": MOCK_USERNAME}
 
 
-async def test_validate_credentials_injects_iot_open_app_id_header(
+async def test_validate_credentials_enables_open_auth_signing(
     hass: HomeAssistant,
 ) -> None:
-    """validate_credentials attaches open-auth request signing hook."""
-    mock_http = MagicMock()
-    mock_http.event_hooks = {"request": []}
+    """Credentials are validated with an Open API signing client."""
     mock_client = AsyncMock()
-    mock_client.authenticate = AsyncMock()
-    mock_client._http = mock_http
 
-    with patch.object(
-        hass,
-        "async_add_executor_job",
-        new=AsyncMock(return_value=mock_client),
-    ):
+    with patch(
+        "custom_components.siseli.config_flow.SiseliClient", return_value=mock_client
+    ) as client_class:
         await _validate_credentials(
             hass,
             {CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
         )
 
-    assert len(mock_http.event_hooks["request"]) == 1
+    client_class.assert_called_once_with(
+        account=MOCK_USERNAME, password=MOCK_PASSWORD, open_auth=True
+    )
+    mock_client.authenticate.assert_awaited_once()
 
 
 async def test_user_step_already_configured(hass: HomeAssistant) -> None:

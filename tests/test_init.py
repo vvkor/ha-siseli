@@ -28,12 +28,9 @@ def _entry(options: dict | None = None) -> MockConfigEntry:
 @pytest.fixture
 def patched_client(mock_siseli_client):
     """Make the coordinator use the mocked SDK client."""
-    with (
-        patch(
-            "custom_components.siseli.coordinator.SiseliClient",
-            return_value=mock_siseli_client,
-        ),
-        patch("custom_components.siseli.coordinator.attach_open_auth"),
+    with patch(
+        "custom_components.siseli.coordinator.SiseliClient",
+        return_value=mock_siseli_client,
     ):
         yield mock_siseli_client
 
