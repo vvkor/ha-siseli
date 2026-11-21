@@ -57,7 +57,15 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "online": {
+        "name": "Online"
+      }
+    },
     "sensor": {
+      "last_data_received": {
+        "name": "Last data received"
+      },
       "battery_soc": {
         "name": "Battery state of charge"
       },

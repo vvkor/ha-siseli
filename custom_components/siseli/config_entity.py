@@ -42,6 +42,14 @@ class SiseliConfigEntity(CoordinatorEntity[SiseliConfigCoordinator]):
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{spec.key}"
 
     @property
+    def available(self) -> bool:
+        """Controls cannot be read or changed while the inverter is offline."""
+        return (
+            super().available
+            and self.coordinator.telemetry_coordinator.device_online is not False
+        )
+
+    @property
     def device_info(self) -> DeviceInfo:
         """Return the shared inverter device."""
         return build_device_info(self.coordinator.telemetry_coordinator)

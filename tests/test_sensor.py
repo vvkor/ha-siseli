@@ -67,7 +67,7 @@ def test_sensor_descriptors_have_translation_keys() -> None:
 
 def test_sensor_descriptor_count() -> None:
     """The descriptor set covers all normalized SDK fields plus lifetime energy."""
-    assert len(SENSORS) == 27
+    assert len(SENSORS) == 28
     assert {desc.key for desc in SENSORS} == set(DEFAULT_DATA)
 
 

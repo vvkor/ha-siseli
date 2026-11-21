@@ -32,6 +32,7 @@ async def async_get_config_entry_diagnostics(
             if coordinator.last_exception
             else None,
             "consecutive_failures": coordinator.consecutive_failures,
+            "device_online": coordinator.device_online,
             "update_interval_seconds": coordinator.update_interval.total_seconds()
             if coordinator.update_interval
             else None,

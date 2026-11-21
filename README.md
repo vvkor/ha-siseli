@@ -14,6 +14,7 @@ Built on top of [python-siseli](https://github.com/vvkor/python-siseli) — all 
 ## Features
 
 - Cloud-based polling of inverter telemetry via the Siseli API
+- An **Online** indicator (connectivity binary sensor) and a **Last data received** timestamp; telemetry and controls become unavailable while the inverter is offline instead of showing stale values
 - UI-based setup via Config Flow (no YAML required)
 - Re-authentication flow for expired credentials, and a Reconfigure action to change the password at any time
 - Optional, risk-gated inverter configuration controls (disabled by default)
@@ -90,6 +91,7 @@ writable because the SDK does not support writing that setting.
 | `invalid_auth` error during setup | Wrong username or password | Double-check your Siseli account credentials |
 | `cannot_connect` error | Network issue or Siseli cloud outage | Check internet connectivity and retry |
 | Integration shows as unavailable | Transient cloud error | It will recover automatically on next poll |
+| Sensors unavailable and **Online** is off | The inverter stopped reporting to the Siseli cloud (the cloud flags it offline, or no report arrived for 10 minutes; the inverter normally reports every ~5 minutes) | Check the inverter's Wi-Fi/data logger; everything recovers on the next poll after it reports again. **Last data received** shows when the cloud last heard from it |
 | Re-authentication prompt | Credentials expired or changed | Follow the re-authentication flow in Notifications |
 | Configuration entities unknown/unavailable while telemetry works | The separate configuration refresh (every 15 minutes) hit a cloud API error, or the setting is absent from the cached configuration | Retried every minute until values arrive, and immediately when telemetry recovers; telemetry is unaffected |
 

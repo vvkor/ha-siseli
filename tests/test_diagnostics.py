@@ -87,6 +87,7 @@ async def test_diagnostics_coordinator_state(hass: HomeAssistant) -> None:
 
     assert coord_diag["last_update_success"] is True
     assert coord_diag["consecutive_failures"] == 2
+    assert "device_online" in coord_diag
 
 
 async def test_diagnostics_data_is_included(hass: HomeAssistant) -> None:
