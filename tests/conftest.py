@@ -28,6 +28,10 @@ class _InvalidResponseError(Exception):
     """Fake SDK invalid-response error."""
 
 
+class _RateLimitError(_NetworkError):
+    """Fake SDK throttling error (a NetworkError subclass, like the real one)."""
+
+
 class _ApiError(Exception):
     """Fake SDK API error."""
 
@@ -405,7 +409,7 @@ _DEFAULT_DATA: dict = {
     "inverter_state": "B",
     "inverter_mode": "Battery mode",
     "load_percent": 14.0,
-    "load_apparent_power": 5000.0,
+    "rated_apparent_power": 5000.0,
     "heat_sink_temperature": 41.0,
     "bus_voltage": 390.0,
     "charging_status": "Charging",
@@ -424,6 +428,7 @@ _fake_siseli = ModuleType("siseli")
 _fake_siseli.AuthenticationError = _AuthenticationError
 _fake_siseli.NetworkError = _NetworkError
 _fake_siseli.ApiError = _ApiError
+_fake_siseli.RateLimitError = _RateLimitError
 _fake_siseli.InvalidResponseError = _InvalidResponseError
 _fake_siseli.SiseliClient = _SiseliClient
 _fake_siseli.CONFIG_SPECS = _CONFIG_SPECS

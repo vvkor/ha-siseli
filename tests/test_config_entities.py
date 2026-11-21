@@ -414,3 +414,33 @@ def test_translation_keys_are_valid_for_home_assistant() -> None:
     assert all(re.fullmatch(r"[a-z0-9_-]+", key) for key in keys)
     assert translation_key_for("setBatteryCVChargeVoltage") == "set_battery_cv_charge_voltage"
     assert translation_key_for("overloadBypass") == "overload_bypass"
+
+
+async def test_battery_scaled_validation_error_hints_at_nominal_voltage(
+    hass: HomeAssistant, mock_siseli_client
+) -> None:
+    """The SDK cross-checks battery voltage settings, so the error says what to check."""
+    _, _, coordinator = _make_config_coordinator(
+        hass, mock_siseli_client, access="critical", voltage=24
+    )
+    mock_siseli_client.safe_set_device_config.side_effect = _ConfigValidationError(
+        "battery nominal voltage 24 V contradicts measured 13 V"
+    )
+
+    with pytest.raises(HomeAssistantError, match="nominal voltage in the") as exc_info:
+        await coordinator.async_write("setBatteryCutOffVoltage", 22.0)
+
+    assert "contradicts" not in str(exc_info.value)
+
+
+async def test_plain_validation_error_has_no_battery_hint(
+    hass: HomeAssistant, mock_siseli_client
+) -> None:
+    """Settings that do not scale with the battery keep the short message."""
+    _, _, coordinator = _make_config_coordinator(hass, mock_siseli_client)
+    mock_siseli_client.safe_set_device_config.side_effect = _ConfigValidationError("x")
+
+    with pytest.raises(HomeAssistantError) as exc_info:
+        await coordinator.async_write("buzzerEnabled", "1")
+
+    assert str(exc_info.value) == "Invalid value for inverter setting."

@@ -106,7 +106,7 @@
       "load_percent": {
         "name": "Load percentage"
       },
-      "load_apparent_power": {
+      "rated_apparent_power": {
         "name": "Rated apparent power"
       },
       "heat_sink_temperature": {

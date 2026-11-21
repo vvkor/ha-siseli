@@ -8,6 +8,7 @@ import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.siseli.const import CONF_CONFIG_ACCESS, DOMAIN
@@ -95,3 +96,30 @@ async def test_options_update_reloads_entry(
     assert entry.state is ConfigEntryState.LOADED
     assert entry.runtime_data.config_coordinator is not None
     assert hass.states.get("switch.siseli_inverter_buzzer") is not None
+
+
+async def test_deprecated_apparent_power_unique_id_is_migrated(
+    hass: HomeAssistant, patched_client
+) -> None:
+    """The renamed telemetry key keeps its entity ID and history."""
+    entry = _entry()
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    old = registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{entry.entry_id}_load_apparent_power",
+        config_entry=entry,
+        suggested_object_id="siseli_inverter_rated_apparent_power",
+    )
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    migrated = registry.async_get(old.entity_id)
+    assert migrated is not None
+    assert migrated.unique_id == f"{entry.entry_id}_rated_apparent_power"
+    assert registry.async_get_entity_id(
+        "sensor", DOMAIN, f"{entry.entry_id}_load_apparent_power"
+    ) is None
+    assert hass.states.get(old.entity_id).state == "5000.0"

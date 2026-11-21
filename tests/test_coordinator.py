@@ -32,6 +32,7 @@ from .conftest import (
     _Device,
     _DeviceState,
     _InvalidResponseError,
+    _RateLimitError,
 )
 
 # ---------------------------------------------------------------------------
@@ -320,3 +321,13 @@ async def test_invalid_response_raises_update_failed(hass: HomeAssistant) -> Non
 
     with pytest.raises(UpdateFailed, match="Error communicating with Siseli API"):
         await coordinator._async_update_data()
+
+
+async def test_rate_limit_is_a_retryable_update_failure(hass: HomeAssistant) -> None:
+    """HTTP 429 throttling must never trigger reauthentication."""
+    coordinator, mock_client = _make_coordinator(hass)
+    mock_client.get_device_state.side_effect = _RateLimitError("429")
+
+    with pytest.raises(UpdateFailed):
+        await coordinator._async_update_data()
+    assert coordinator.consecutive_failures == 1
