@@ -7,8 +7,6 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-from homeassistant.config_entries import ConfigEntry, SOURCE_USER
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import (
     CONF_PASSWORD,
@@ -17,13 +15,13 @@ from homeassistant.const import (
     UnitOfEnergy,
 )
 from homeassistant.core import HomeAssistant
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.siseli.const import DOMAIN
 from custom_components.siseli.coordinator import SiseliCoordinator
 from custom_components.siseli.sensor import SENSORS, SiseliSensorEntity
 
 from .conftest import DEFAULT_DATA, MOCK_PASSWORD, MOCK_USERNAME
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -34,17 +32,13 @@ def _make_coordinator_with_data(
     hass: HomeAssistant, data: dict | None = None
 ) -> SiseliCoordinator:
     """Return a coordinator pre-loaded with data."""
-    entry = ConfigEntry(
-        version=1,
-        minor_version=1,
+    entry = MockConfigEntry(
         domain=DOMAIN,
         title=MOCK_USERNAME,
         data={CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
         options={},
-        source=SOURCE_USER,
         entry_id="sensor_test_id",
         unique_id=MOCK_USERNAME,
-        discovery_keys={},
     )
     mock_client = MagicMock()
     mock_client.get_data = AsyncMock(return_value=(data or DEFAULT_DATA).copy())

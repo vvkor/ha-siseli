@@ -9,11 +9,12 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from homeassistant.config_entries import ConfigEntry, SOURCE_USER
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.update_coordinator import UpdateFailed
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.siseli.config_coordinator import (
     CONFIG_REFRESH_INTERVAL,
@@ -26,30 +27,35 @@ from custom_components.siseli.const import (
     DOMAIN,
 )
 from custom_components.siseli.coordinator import SiseliCoordinator
-from custom_components.siseli.number import SiseliConfigNumber, async_setup_entry as setup_numbers
+from custom_components.siseli.number import SiseliConfigNumber
+from custom_components.siseli.number import async_setup_entry as setup_numbers
 from custom_components.siseli.select import (
     SiseliConfigSelect,
+)
+from custom_components.siseli.select import (
     async_setup_entry as setup_selects,
 )
 from custom_components.siseli.switch import (
     SiseliConfigSwitch,
+)
+from custom_components.siseli.switch import (
     async_setup_entry as setup_switches,
 )
 
 from .conftest import (
     _CONFIG_DEFAULTS,
     _CONFIG_SPECS,
+    MOCK_PASSWORD,
+    MOCK_USERNAME,
+    AuthenticationError,
+    _ApiError,
     _ConfigAccess,
     _ConfigAccessDenied,
-    _ApiError,
     _ConfigRejected,
-    _NetworkError,
     _ConfigValidationError,
     _ConfigWriteResult,
     _ConfigWriteStatus,
-    AuthenticationError,
-    MOCK_PASSWORD,
-    MOCK_USERNAME,
+    _NetworkError,
 )
 
 
@@ -60,9 +66,7 @@ def _make_config_coordinator(
     voltage: int = 12,
 ) -> tuple[ConfigEntry, SiseliCoordinator, SiseliConfigCoordinator]:
     """Build telemetry and config coordinators around a test client."""
-    entry = ConfigEntry(
-        version=1,
-        minor_version=1,
+    entry = MockConfigEntry(
         domain=DOMAIN,
         title=MOCK_USERNAME,
         data={CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
@@ -70,10 +74,8 @@ def _make_config_coordinator(
             CONF_CONFIG_ACCESS: access,
             CONF_BATTERY_NOMINAL_VOLTAGE: voltage,
         },
-        source=SOURCE_USER,
         entry_id="config_test_id",
         unique_id=MOCK_USERNAME,
-        discovery_keys={},
     )
     telemetry = SiseliCoordinator(hass, entry)
     telemetry.client = mock_siseli_client
@@ -121,7 +123,7 @@ async def test_entity_set_matches_access_level(
     )
 
     entities = await _setup_entities(hass, entry)
-    all_entities = sum(entities.values(), [])
+    all_entities = [entity for group in entities.values() for entity in group]
 
     assert len(all_entities) == expected_count
     assert all(entity.entity_category is EntityCategory.CONFIG for entity in all_entities)
@@ -218,7 +220,7 @@ async def test_switch_write_uses_sdk_and_updates_confirmed_value(
     hass: HomeAssistant, mock_siseli_client, caplog: pytest.LogCaptureFixture
 ) -> None:
     """A switch submits a wire enum and takes state from the SDK read-back."""
-    entry, _, coordinator = _make_config_coordinator(hass, mock_siseli_client)
+    _, _, coordinator = _make_config_coordinator(hass, mock_siseli_client)
     spec = _CONFIG_SPECS["buzzerEnabled"]
     entity = SiseliConfigSwitch(coordinator, spec)
     mock_siseli_client.safe_set_device_config.side_effect = None

@@ -5,18 +5,21 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.config_entries import SOURCE_USER, ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import UpdateFailed
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.siseli.const import (
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
 )
-from custom_components.siseli.coordinator import ENERGY_TOTALS_INTERVAL, SiseliCoordinator
+from custom_components.siseli.coordinator import (
+    ENERGY_TOTALS_INTERVAL,
+    SiseliCoordinator,
+)
 
 from .conftest import (
     DEFAULT_DATA,
@@ -35,19 +38,15 @@ from .conftest import (
 # ---------------------------------------------------------------------------
 
 
-def _make_entry(hass: HomeAssistant, options: dict | None = None) -> ConfigEntry:
+def _make_entry(hass: HomeAssistant, options: dict | None = None) -> MockConfigEntry:
     """Create a minimal ConfigEntry for testing."""
-    entry = ConfigEntry(
-        version=1,
-        minor_version=1,
+    entry = MockConfigEntry(
         domain=DOMAIN,
         title=MOCK_USERNAME,
         data={CONF_USERNAME: MOCK_USERNAME, CONF_PASSWORD: MOCK_PASSWORD},
         options=options or {},
-        source=SOURCE_USER,
         entry_id="coordinator_test_id",
         unique_id=MOCK_USERNAME,
-        discovery_keys={},
     )
     return entry
 
@@ -292,3 +291,27 @@ async def test_device_info_stored_from_state(hass: HomeAssistant) -> None:
     await coordinator._async_update_data()
 
     assert coordinator.device_info == DEVICE_INFO
+
+
+async def test_energy_totals_api_error_keeps_telemetry(hass: HomeAssistant) -> None:
+    """A cloud API error on the lifetime counters does not fail the whole update."""
+    coordinator, mock_client = _make_coordinator(hass)
+    mock_client.get_device_energy_totals.side_effect = _ApiError("API error 71000")
+
+    data = await coordinator._async_update_data()
+
+    assert data["battery_soc"] == DEFAULT_DATA["battery_soc"]
+    assert data["pv_generated_energy_total"] is None
+
+
+async def test_multiple_devices_logs_warning(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Only the first device is monitored, and the user is told about it."""
+    coordinator, mock_client = _make_coordinator(hass)
+    mock_client.get_all_devices.return_value = [_Device("device-001"), _Device("device-002")]
+
+    await coordinator._async_update_data()
+
+    assert coordinator.device_id == "device-001"
+    assert "only the first one" in caplog.text

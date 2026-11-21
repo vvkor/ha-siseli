@@ -15,7 +15,7 @@ Built on top of [python-siseli](https://github.com/vvkor/python-siseli) — all 
 
 - Cloud-based polling of inverter telemetry via the Siseli API
 - UI-based setup via Config Flow (no YAML required)
-- Re-authentication flow for expired credentials
+- Re-authentication flow for expired credentials, and a Reconfigure action to change the password at any time
 - Optional, risk-gated inverter configuration controls (disabled by default)
 - Installable via HACS
 
@@ -23,7 +23,7 @@ Built on top of [python-siseli](https://github.com/vvkor/python-siseli) — all 
 
 ## Requirements
 
-- Home Assistant 2024.1 or newer
+- Home Assistant 2024.11 or newer
 - A Siseli cloud account with at least one registered device
 - [python-siseli](https://pypi.org/project/python-siseli/) (installed automatically)
 
@@ -31,7 +31,7 @@ Built on top of [python-siseli](https://github.com/vvkor/python-siseli) — all 
 
 | Component | Supported versions | Notes |
 |-----------|--------------------|-------|
-| Home Assistant Core | 2024.1+ | `manifest.json` enforces the minimum supported HA version |
+| Home Assistant Core | 2024.11+ | `manifest.json` enforces the minimum supported HA version |
 | HACS | Latest stable release | Recommended installation path for upgrades and rollbacks |
 | Siseli SDK | `python-siseli==0.2.6` | Pinned in `manifest.json`; API and domain logic stay in the SDK |
 
@@ -106,7 +106,7 @@ writable because the SDK does not support writing that setting.
 ## Support boundaries
 
 - Supported setup path: **Settings → Devices & Services → Add Integration** using the UI config flow.
-- Supported runtime scope: `python-siseli` telemetry and optional configuration controls (SDK 0.2.5) exposed through coordinator-backed entities.
+- Supported runtime scope: `python-siseli` telemetry and optional configuration controls (SDK 0.2.6) exposed through coordinator-backed entities.
 - Unsupported scope: YAML setup, beta/nightly Home Assistant builds, and HA-side Siseli API workarounds that belong in the SDK first.
 - See [SUPPORT.md](SUPPORT.md) for issue triage expectations and [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow.
 

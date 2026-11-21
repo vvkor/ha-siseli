@@ -13,6 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Configuration entities (switch, select, number) now recover right after the inverter comes back online instead of waiting for the 15-minute refresh or an integration reload: a refresh is requested when telemetry recovers, and failed or empty refreshes are retried every minute.
 - Cloud API errors such as `Device is offline` (71000) are handled as normal update failures instead of logging an "Unexpected error" traceback on every poll.
+- A cloud API error while reading lifetime energy counters no longer fails the whole telemetry update.
+- Diagnostics no longer include the account name (the config entry title).
+- Re-authentication can no longer re-point an entry to a different Siseli account.
+- The minimum Home Assistant version is now 2024.11, which the code already required (`ConfigFlowResult`, `data_updates` in reauth).
+
+### Added
+
+- Reconfigure flow to change the account password without waiting for a failed login.
+- A warning is logged when the account has more than one device, since only the first is monitored.
+
+### Changed
+
+- The initial configuration refresh runs as a config-entry background task and is cancelled on unload.
+- Sensor and configuration entities share one device-info builder.
+- Development: `.gitignore` added and committed bytecode removed; CI runs on Python 3.13 with the current Home Assistant test plugin, lints tests, reports coverage, and runs hassfest and HACS validation; test dependencies refreshed and `python-siseli` pinned to 0.2.6.
 
 ### Changed
 

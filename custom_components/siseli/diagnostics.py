@@ -21,7 +21,6 @@ async def async_get_config_entry_diagnostics(
     return {
         "entry": {
             "entry_id": entry.entry_id,
-            "title": entry.title,
             "domain": entry.domain,
             "state": entry.state.value,
             "options": dict(entry.options),
@@ -32,7 +31,7 @@ async def async_get_config_entry_diagnostics(
             "last_exception": repr(coordinator.last_exception)
             if coordinator.last_exception
             else None,
-            "consecutive_failures": coordinator._consecutive_failures,
+            "consecutive_failures": coordinator.consecutive_failures,
             "update_interval_seconds": coordinator.update_interval.total_seconds()
             if coordinator.update_interval
             else None,

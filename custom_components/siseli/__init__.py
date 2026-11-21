@@ -12,6 +12,7 @@ from .const import (
     CONF_CONFIG_ACCESS,
     DEFAULT_BATTERY_NOMINAL_VOLTAGE,
     DEFAULT_CONFIG_ACCESS,
+    DOMAIN,
 )
 from .coordinator import SiseliCoordinator
 
@@ -46,7 +47,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: SiseliConfigEntry) -> bo
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     if coordinator.config_coordinator is not None:
-        hass.async_create_task(coordinator.config_coordinator.async_refresh())
+        # Configuration values are slow and optional; never delay entity setup.
+        entry.async_create_background_task(
+            hass,
+            coordinator.config_coordinator.async_refresh(),
+            f"{DOMAIN} initial configuration refresh",
+        )
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     return True
 

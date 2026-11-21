@@ -11,7 +11,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from siseli import ConfigSpec
 
 from .config_coordinator import SiseliConfigCoordinator
-from .const import DOMAIN
+from .device import build_device_info
 
 
 class SiseliConfigEntity(CoordinatorEntity[SiseliConfigCoordinator]):
@@ -32,11 +32,7 @@ class SiseliConfigEntity(CoordinatorEntity[SiseliConfigCoordinator]):
     @property
     def device_info(self) -> DeviceInfo:
         """Return the shared inverter device."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self.coordinator.config_entry.entry_id)},
-            name="Siseli Inverter",
-            manufacturer="Siseli",
-        )
+        return build_device_info(self.coordinator.telemetry_coordinator)
 
     @property
     def raw_value(self) -> Any:

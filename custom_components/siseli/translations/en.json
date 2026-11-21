@@ -17,6 +17,14 @@
           "username": "Username",
           "password": "Password"
         }
+      },
+      "reconfigure": {
+        "title": "Update Siseli credentials",
+        "description": "Update the password for this Siseli cloud account.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
       }
     },
     "error": {
@@ -26,7 +34,9 @@
     },
     "abort": {
       "already_configured": "This Siseli account is already configured.",
-      "reauth_successful": "Re-authentication was successful."
+      "reauth_successful": "Re-authentication was successful.",
+      "reconfigure_successful": "The Siseli credentials were updated.",
+      "wrong_account": "The credentials belong to a different Siseli account. Add that account as a new integration instead."
     }
   },
   "options": {

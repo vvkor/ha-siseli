@@ -27,8 +27,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import SiseliConfigEntry
-from .const import DOMAIN
 from .coordinator import SiseliCoordinator
+from .device import build_device_info
 
 
 class SiseliSensorEntityDescription(SensorEntityDescription):
@@ -165,22 +165,23 @@ SENSORS: tuple[SiseliSensorEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
-) + tuple(
-    SiseliSensorEntityDescription(
-        key=key,
-        translation_key=key,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    )
-    for key in (
-        "charging_status",
-        "scc_charging_status",
-        "ac_charging_status",
-        "mains_status",
-        "load_status",
-        "charger_source_priority",
-        "output_source_priority",
-        "battery_type",
-    )
+    *(
+        SiseliSensorEntityDescription(
+            key=key,
+            translation_key=key,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        )
+        for key in (
+            "charging_status",
+            "scc_charging_status",
+            "ac_charging_status",
+            "mains_status",
+            "load_status",
+            "charger_source_priority",
+            "output_source_priority",
+            "battery_type",
+        )
+    ),
 )
 
 
@@ -217,15 +218,8 @@ class SiseliSensorEntity(CoordinatorEntity[SiseliCoordinator], SensorEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Return device info, enriched with model/firmware once known."""
-        info = self.coordinator.device_info
-        return DeviceInfo(
-            identifiers={(DOMAIN, self.coordinator.config_entry.entry_id)},
-            name="Siseli Inverter",
-            manufacturer="Siseli",
-            model=info.get("machine_type"),
-            sw_version=info.get("firmware_version"),
-        )
+        """Return the shared inverter device."""
+        return build_device_info(self.coordinator)
 
     @property
     def native_value(self) -> Any:

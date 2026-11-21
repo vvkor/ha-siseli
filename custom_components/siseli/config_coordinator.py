@@ -60,9 +60,10 @@ class SiseliConfigCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             config_entry=entry,
         )
         assert telemetry_coordinator.client is not None
-        assert telemetry_coordinator._device_id is not None
+        assert telemetry_coordinator.device_id is not None
+        self.telemetry_coordinator = telemetry_coordinator
         self.client = telemetry_coordinator.client
-        self.device_id = telemetry_coordinator._device_id
+        self.device_id = telemetry_coordinator.device_id
         self.access = _ACCESS_BY_NAME[access_name]
         self.battery_nominal_voltage = battery_nominal_voltage
         self._write_lock = Lock()

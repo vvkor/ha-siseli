@@ -56,6 +56,16 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._energy_totals: dict[str, float | None] = {}
         self._energy_totals_at: datetime | None = None
 
+    @property
+    def device_id(self) -> str | None:
+        """Return the monitored device id once it has been discovered."""
+        return self._device_id
+
+    @property
+    def consecutive_failures(self) -> int:
+        """Return how many polls in a row have failed."""
+        return self._consecutive_failures
+
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from the Siseli cloud."""
         _LOGGER.debug("Fetching data from Siseli cloud")
@@ -74,6 +84,12 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 devices = await self.client.get_all_devices()
                 if not devices:
                     raise UpdateFailed("No devices found in Siseli account")
+                if len(devices) > 1:
+                    _LOGGER.warning(
+                        "Siseli account has %d devices; only the first one (%s) is monitored",
+                        len(devices),
+                        devices[0].id,
+                    )
                 self._device_id = devices[0].id
             state = await self.client.get_device_state(self._device_id)
             await self._async_refresh_energy_totals()
@@ -133,5 +149,5 @@ class SiseliCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._energy_totals = await self.client.get_device_energy_totals(
                 self._device_id
             )
-        except NetworkError as err:
+        except (NetworkError, ApiError) as err:
             _LOGGER.warning("Could not refresh Siseli lifetime energy totals: %s", err)
