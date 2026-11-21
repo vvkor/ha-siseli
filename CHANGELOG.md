@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.3.0] - 2026-11-21
+
 ### Fixed
 
 - Configuration entities (switch, select, number) now recover right after the inverter comes back online instead of waiting for the 15-minute refresh or an integration reload: a refresh is requested when telemetry recovers, and failed or empty refreshes are retried every minute.
